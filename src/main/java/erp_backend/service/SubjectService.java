@@ -2,11 +2,10 @@ package erp_backend.service;
 
 import java.util.List;
 
-import javax.security.auth.Subject;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import erp_backend.entity.Subject;
 import erp_backend.repository.SubjectRepository;
 
 @Service
