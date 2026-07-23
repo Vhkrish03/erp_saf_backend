@@ -21,15 +21,19 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
 
         Optional<User> user = userRepository.findByEmail(request.getEmail());
-
+    
         if (user.isEmpty()) {
-            return new LoginResponse(false, "User not found");
+            return new LoginResponse(false, "User not found", null);
         }
-
+    
         if (!user.get().getPassword().equals(request.getPassword())) {
-            return new LoginResponse(false, "Invalid password");
+            return new LoginResponse(false, "Invalid password", null);
         }
-
-        return new LoginResponse(true, "Login Successful");
+    
+        return new LoginResponse(
+                true,
+                "Login Successful",
+                user.get().getRole()
+        );
     }
 }
