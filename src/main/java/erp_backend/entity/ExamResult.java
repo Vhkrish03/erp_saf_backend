@@ -1,5 +1,7 @@
 package erp_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,6 +32,7 @@ public class ExamResult {
 
     @ManyToOne
     @JoinColumn(name = "semester_result_id")
+    @JsonIgnore
     private SemesterResult semesterResult;
 
     public ExamResult() {

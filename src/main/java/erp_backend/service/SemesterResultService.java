@@ -17,6 +17,6 @@ public class SemesterResultService {
     }
 
     public List<SemesterResult> getResults(String studentId) {
-        return repository.findByStudentId(studentId);
+        return repository.findByStudent_Id(studentId);
     }
 }

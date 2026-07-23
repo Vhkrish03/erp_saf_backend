@@ -6,8 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import erp_backend.entity.SemesterResult;
 
-public interface SemesterResultRepository extends JpaRepository<SemesterResult, Long> {
+public interface SemesterResultRepository
+        extends JpaRepository<SemesterResult, Long> {
 
-    List<SemesterResult> findByStudentId(String studentId);
+        List<SemesterResult> findByStudent_Id(String studentId);
 
 }
