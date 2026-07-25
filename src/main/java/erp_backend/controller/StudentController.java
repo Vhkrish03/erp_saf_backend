@@ -23,11 +23,11 @@ public class StudentController {
         return service.getStudent(id);
     }
 
-    @PutMapping("/contact/{studentId}")
+    @PutMapping("/contact/{id}")
     public Student updateContact(
-        @PathVariable String studentId,
+        @PathVariable String id,
         @RequestBody Student student) {
-        return service.updateContact(studentId, student);
+        return service.updateContact(id, student);
     }
     
 }

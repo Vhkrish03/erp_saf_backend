@@ -12,6 +12,8 @@ public class StudentService {
     @Autowired
     private StudentRepository repository;
 
+    
+
     public Student getStudent(String id) {
         return repository.findById(id).orElse(null);
     }
