@@ -10,9 +10,27 @@ import erp_backend.repository.StudentRepository;
 public class StudentService {
 
     @Autowired
-    StudentRepository repository;
+    private StudentRepository repository;
 
     public Student getStudent(String id) {
         return repository.findById(id).orElse(null);
+    }
+
+    public Student updateContact(String studentId, Student updatedStudent) {
+
+        Student student = repository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        student.setEmail(updatedStudent.getEmail());
+        student.setPhone(updatedStudent.getPhone());
+        student.setAddress(updatedStudent.getAddress());
+
+        student.setEmergencyContactName(
+                updatedStudent.getEmergencyContactName());
+
+        student.setEmergencyContactPhone(
+                updatedStudent.getEmergencyContactPhone());
+
+        return repository.save(student);
     }
 }

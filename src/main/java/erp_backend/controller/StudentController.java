@@ -3,6 +3,8 @@ package erp_backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,4 +22,12 @@ public class StudentController {
     public Student getStudent(@PathVariable String id) {
         return service.getStudent(id);
     }
+
+    @PutMapping("/contact/{studentId}")
+    public Student updateContact(
+        @PathVariable String studentId,
+        @RequestBody Student student) {
+        return service.updateContact(studentId, student);
+    }
+    
 }

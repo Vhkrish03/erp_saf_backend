@@ -27,6 +27,13 @@ public class Student {
     private String bloodGroup;
 
     private String dob;
+
+    @Column(name = "emergency_contact_name")
+    private String emergencyContactName;
+    
+    @Column(name = "emergency_contact_phone")
+    private String emergencyContactPhone;
+
     private String address;
     private String advisor;
     private double cgpa;
@@ -74,6 +81,14 @@ public class Student {
 
     public String getDob() {
         return dob;
+    }
+
+    public String getEmergencyContactName() {
+        return emergencyContactName;
+    }
+
+    public String getEmergencyContactPhone() {
+        return emergencyContactPhone;
     }
 
     public String getAddress() {
@@ -128,6 +143,14 @@ public class Student {
 
     public void setDob(String dob) {
         this.dob = dob;
+    }
+
+    public void setEmergencyContactName(String emergencyContactName) {
+        this.emergencyContactName = emergencyContactName;
+    }
+
+    public void setEmergencyContactPhone(String emergencyContactPhone) {
+        this.emergencyContactPhone = emergencyContactPhone;
     }
 
     public void setAddress(String address) {
