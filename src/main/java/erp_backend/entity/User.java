@@ -35,8 +35,17 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    private Boolean isActive;
+
+    private LocalDateTime lastLogin;
+
+    @Column(name = "reference_id")
+    private String referenceId;
+
     public User() {
     }
+
+// Setters and Getters
 
     public Long getId() {
         return id;
@@ -93,4 +102,29 @@ public class User {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+    
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+    
+    public LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+    
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
+    public String getReferenceId() {
+        return referenceId;
+    }
+    
+    public void setReferenceId(String referenceId) {
+        this.referenceId = referenceId;
+    }
+    
 }

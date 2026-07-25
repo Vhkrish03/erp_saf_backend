@@ -1,9 +1,5 @@
 package erp_backend.Teacher.controller;
 
-
-
-import java.util.List;
-
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,11 +18,6 @@ public class TeacherController {
 
     public TeacherController(TeacherService service) {
         this.service = service;
-    }
-
-    @GetMapping
-    public List<Teacher> getAllTeachers() {
-        return service.getAllTeachers();
     }
 
     @GetMapping("/{employeeId}")
