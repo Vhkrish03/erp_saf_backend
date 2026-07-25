@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import erp_backend.dto.ContactUpdateRequest;
 import erp_backend.entity.Student;
 import erp_backend.service.StudentService;
 
@@ -24,10 +25,11 @@ public class StudentController {
     }
 
     @PutMapping("/contact/{id}")
-    public Student updateContact(
+public Student updateContact(
         @PathVariable String id,
-        @RequestBody Student student) {
-        return service.updateContact(id, student);
-    }
+        @RequestBody ContactUpdateRequest request) {
+
+    return service.updateContact(id, request);
+}
     
 }

@@ -18,6 +18,7 @@ public class Student {
     private String rollNumber;
 
     private String department;
+    private String section;
     private String year;
     private String semester;
     private String email;
@@ -57,6 +58,10 @@ public class Student {
 
     public String getDepartment() {
         return department;
+    }
+
+    public String getSection() {
+        return section;
     }
 
     public String getYear() {
@@ -121,6 +126,10 @@ public class Student {
         this.department = department;
     }
 
+    public void setSection(String section) {
+        this.section = section;
+    }
+
     public void setYear(String year) {
         this.year = year;
     }
@@ -165,3 +174,6 @@ public class Student {
         this.cgpa = cgpa;
     }
 }
+
+
+
