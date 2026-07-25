@@ -14,9 +14,12 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     List<Student> findBySection(String section);
 
+    List<Student> findByDepartmentAndSemester(
+            String department,
+            String semester);
+
     List<Student> findByDepartmentAndSemesterAndSection(
             String department,
             String semester,
-            String section
-    );
+            String section);
 }

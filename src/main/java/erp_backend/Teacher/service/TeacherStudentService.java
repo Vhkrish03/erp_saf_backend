@@ -10,14 +10,47 @@ import erp_backend.repository.StudentRepository;
 @Service
 public class TeacherStudentService {
 
-    private final StudentRepository studentRepository;
+    private final StudentRepository repository;
 
-    public TeacherStudentService(StudentRepository studentRepository) {
-        this.studentRepository = studentRepository;
+    public TeacherStudentService(StudentRepository repository) {
+        this.repository = repository;
     }
 
-    // Get all students
-    public List<Student> getAllStudents() {
-        return studentRepository.findAll();
+    public List<Student> getStudents(
+            String department,
+            String semester,
+            String section) {
+
+        if (!department.isEmpty() &&
+                !semester.isEmpty() &&
+                !section.isEmpty()) {
+
+            return repository.findByDepartmentAndSemesterAndSection(
+                    department,
+                    semester,
+                    section);
+        }
+
+        if (!department.isEmpty() &&
+                !semester.isEmpty()) {
+
+            return repository.findByDepartmentAndSemester(
+                    department,
+                    semester);
+        }
+
+        if (!department.isEmpty()) {
+            return repository.findByDepartment(department);
+        }
+
+        if (!semester.isEmpty()) {
+            return repository.findBySemester(semester);
+        }
+
+        if (!section.isEmpty()) {
+            return repository.findBySection(section);
+        }
+
+        return repository.findAll();
     }
 }
