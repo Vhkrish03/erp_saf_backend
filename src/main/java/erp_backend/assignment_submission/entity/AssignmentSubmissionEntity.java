@@ -1,4 +1,4 @@
-package erp_backend.assignment_submission.erp_backend.assignment_submission.entity;
+package erp_backend.assignment_submission.entity;
 
 
 

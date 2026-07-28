@@ -1,4 +1,5 @@
 package erp_backend.service;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,4 +31,34 @@ public class StudentService {
 
         return repository.save(student);
     }
+
+
+   
+
+
+
+/**
+ * Returns all students belonging to a particular section.
+ *
+ * Purpose:
+ * This method is mainly used by the Teacher module.
+ *
+ * Example:
+ * If the teacher opens an assignment created for "III CSE A",
+ * the application needs to display every student in that section
+ * so the teacher can mark whether the report was submitted,
+ * assign marks, and add remarks.
+ *
+ * Future Uses:
+ * - Attendance
+ * - Internal Marks
+ * - Assignment Report Submission
+ * - Lab Record Verification
+ * - Class-wise Student List
+ */
+public List<Student> getStudentsBySection(String section) {
+    return repository.findBySection(section);
+}
+
+
 }

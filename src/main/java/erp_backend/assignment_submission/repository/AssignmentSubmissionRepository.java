@@ -1,4 +1,4 @@
-package erp_backend.assignment_submission.erp_backend.assignment_submission.repository;
+package erp_backend.assignment_submission.repository;
 
 
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import erp_backend.assignment_submission.erp_backend.assignment_submission.entity.AssignmentSubmissionEntity;
+import erp_backend.assignment_submission.entity.AssignmentSubmissionEntity;
 
 
 

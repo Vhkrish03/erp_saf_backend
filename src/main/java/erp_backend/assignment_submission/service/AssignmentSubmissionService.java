@@ -1,12 +1,14 @@
-package erp_backend.assignment_submission.erp_backend.assignment_submission.service;
+package erp_backend.assignment_submission.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import erp_backend.assignment_submission.erp_backend.assignment_submission.entity.AssignmentSubmissionEntity;
-import erp_backend.assignment_submission.erp_backend.assignment_submission.repository.AssignmentSubmissionRepository;
+import erp_backend.assignment_submission.entity.AssignmentSubmissionEntity;
+import erp_backend.assignment_submission.repository.AssignmentSubmissionRepository;
+
+
 
 @Service
 public class AssignmentSubmissionService {
