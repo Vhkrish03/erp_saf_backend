@@ -2,6 +2,7 @@ package erp_backend.assignment_submission.erp_backend.assignment_submission.repo
 
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,6 +14,10 @@ public interface AssignmentSubmissionRepository
         extends JpaRepository<AssignmentSubmissionEntity, Long> {
 
     List<AssignmentSubmissionEntity> findByAssignmentId(Long assignmentId);
+
+    Optional<AssignmentSubmissionEntity> findByAssignmentIdAndStudentId(
+        Long assignmentId,
+        String studentId);
 
 }
 
