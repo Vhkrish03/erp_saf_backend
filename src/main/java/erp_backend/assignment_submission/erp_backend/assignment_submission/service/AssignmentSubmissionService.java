@@ -25,21 +25,42 @@ public class AssignmentSubmissionService {
         return repository.findByAssignmentId(assignmentId);
     }
 
-    public AssignmentSubmissionEntity saveSubmission(AssignmentSubmissionEntity submission) {
+    /*
+    This SaveSubmission Method used to 
+    First time → creates a new record.
+    Next time → updates the existing record instead of inserting another row.
+     */
 
-        if (submission.getCreatedAt() == null) {
-            submission.setCreatedAt(LocalDateTime.now());
-        }
+    
+    public AssignmentSubmissionEntity saveSubmission(
+        AssignmentSubmissionEntity submission) {
 
-        submission.setUpdatedAt(LocalDateTime.now());
+    AssignmentSubmissionEntity entity =
+            repository.findByAssignmentIdAndStudentId(
+                    submission.getAssignmentId(),
+                    submission.getStudentId()
+            ).orElse(new AssignmentSubmissionEntity());
 
-        if ("SUBMITTED".equalsIgnoreCase(submission.getStatus())) {
-            submission.setSubmittedAt(LocalDateTime.now());
-        }
-
-
-        return repository.save(submission);
+    if (entity.getId() == null) {
+        entity.setCreatedAt(LocalDateTime.now());
     }
+
+    entity.setAssignmentId(submission.getAssignmentId());
+    entity.setStudentId(submission.getStudentId());
+    entity.setStatus(submission.getStatus());
+    entity.setMarks(submission.getMarks());
+    entity.setRemarks(submission.getRemarks());
+
+    if ("SUBMITTED".equalsIgnoreCase(submission.getStatus())) {
+        entity.setSubmittedAt(LocalDateTime.now());
+    } else {
+        entity.setSubmittedAt(null);
+    }
+
+    entity.setUpdatedAt(LocalDateTime.now());
+
+    return repository.save(entity);
+}
 
     public void deleteSubmission(Long id) {
         repository.deleteById(id);
