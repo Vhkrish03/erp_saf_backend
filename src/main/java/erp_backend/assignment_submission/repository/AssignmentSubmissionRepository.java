@@ -15,6 +15,25 @@ public interface AssignmentSubmissionRepository
 
     List<AssignmentSubmissionEntity> findByAssignmentId(Long assignmentId);
 
+
+    /**
+ * Finds a submission record for a particular assignment
+ * and a particular student.
+ *
+ * Purpose:
+ * Used to check whether a student has already been marked
+ * as Submitted or Not Submitted by the teacher.
+ *
+ * Example:
+ * Assignment ID = 5
+ * Student ID = STU001
+ *
+ * Returns:
+ * Existing submission record if available,
+ * otherwise returns an empty Optional.
+ */
+
+
     Optional<AssignmentSubmissionEntity> findByAssignmentIdAndStudentId(
         Long assignmentId,
         String studentId);
