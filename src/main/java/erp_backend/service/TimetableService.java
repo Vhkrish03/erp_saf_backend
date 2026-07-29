@@ -23,4 +23,9 @@ public class TimetableService {
     public List<Timetable> getByDay(String day) {
         return repository.findByDay(day);
     }
+
+    // Retrieve the timetable schedule for the logged-in teacher.
+    public List<Timetable> getTeacherTimetable(String employeeId) {
+        return repository.findByEmployeeId(employeeId);
+    }
 }

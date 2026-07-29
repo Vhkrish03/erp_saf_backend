@@ -27,6 +27,8 @@ public class AssignmentEntity {
     private LocalDateTime dueDate;
 
     private String section;
+    private String department;
+    private String year;
 
     @Column(name="attachment_file")
     private String attachmentFile;
@@ -84,6 +86,22 @@ public class AssignmentEntity {
 
     public void setSection(String section) {
         this.section=section;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+    
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+    
+    public String getYear() {
+        return year;
+    }
+    
+    public void setYear(String year) {
+        this.year = year;
     }
 
     public String getAttachmentFile() {

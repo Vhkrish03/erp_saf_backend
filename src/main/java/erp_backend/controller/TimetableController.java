@@ -33,6 +33,13 @@ public class TimetableController {
     }
 
 
+    // Get timetable details for a specific teacher based on Employee ID.
+    @GetMapping("/teacher/{employeeId}")
+public List<Timetable> getTeacherTimetable(@PathVariable String employeeId) {
+    return service.getTeacherTimetable(employeeId);
+}
+
+
     @GetMapping("/test01")
     public Timetable test() {
     
