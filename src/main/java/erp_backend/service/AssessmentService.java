@@ -381,14 +381,12 @@ public class AssessmentService {
         all.addAll(iat);
 
         for (Assessment asm : all) {
+            // Delete marks manually as they don't cascade on delete
             List<AssessmentMark> marks = markRepository.findByAssessmentId(asm.getId());
             markRepository.deleteAllInBatch(marks);
 
-            workflowRepository.findByAssessmentId(asm.getId()).ifPresent(workflowRepository::delete);
-
-            List<AssessmentComponent> components = componentRepository.findByAssessmentId(asm.getId());
-            componentRepository.deleteAllInBatch(components);
-
+            // Removing the parent Assessment automatically cascade-deletes components and
+            // workflows
             assessmentRepository.delete(asm);
         }
     }
