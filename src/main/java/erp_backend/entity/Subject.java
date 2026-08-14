@@ -21,6 +21,7 @@ public class Subject {
     private double attendancePercent;
     private int classesHeld;
     private int classesAttended;
+    private String employeeId;
 
     // Default Constructor
     public Subject() {
@@ -28,8 +29,8 @@ public class Subject {
 
     // Parameterized Constructor
     public Subject(Long id, String code, String name, String faculty,
-                   int credits, double attendancePercent,
-                   int classesHeld, int classesAttended) {
+            int credits, double attendancePercent,
+            int classesHeld, int classesAttended, String employeeId) {
         this.id = id;
         this.code = code;
         this.name = name;
@@ -38,6 +39,7 @@ public class Subject {
         this.attendancePercent = attendancePercent;
         this.classesHeld = classesHeld;
         this.classesAttended = classesAttended;
+        this.employeeId = employeeId;
     }
 
     // Getters and Setters
@@ -104,5 +106,13 @@ public class Subject {
 
     public void setClassesAttended(int classesAttended) {
         this.classesAttended = classesAttended;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 }
