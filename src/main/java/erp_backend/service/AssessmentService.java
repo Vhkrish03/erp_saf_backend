@@ -392,22 +392,22 @@ public class AssessmentService {
             ids.add(asm.getId());
         }
 
-        // Native SQL deletes ensure no cascading constraint bugs occur during JPA
-        // transaction flush
-        entityManager.createNativeQuery("DELETE FROM assessment_marks WHERE assessment_id IN (:ids)")
-                .setParameter("ids", ids)
-                .executeUpdate();
+        for (Long id : ids) {
+            entityManager.createNativeQuery("DELETE FROM assessment_marks WHERE assessment_id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM assessment_workflows WHERE assessment_id IN (:ids)")
-                .setParameter("ids", ids)
-                .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM assessment_workflows WHERE assessment_id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM assessment_components WHERE assessment_id IN (:ids)")
-                .setParameter("ids", ids)
-                .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM assessment_components WHERE assessment_id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM assessments WHERE id IN (:ids)")
-                .setParameter("ids", ids)
-                .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM assessments WHERE id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
+        }
     }
 }
