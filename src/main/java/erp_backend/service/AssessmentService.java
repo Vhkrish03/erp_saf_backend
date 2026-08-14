@@ -11,6 +11,9 @@ import java.util.*;
 @Service
 public class AssessmentService {
 
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     private final AssessmentRepository assessmentRepository;
     private final AssessmentComponentRepository componentRepository;
     private final AssessmentMarkRepository markRepository;
@@ -380,14 +383,31 @@ public class AssessmentService {
         all.addAll(weekly);
         all.addAll(iat);
 
-        for (Assessment asm : all) {
-            // Delete marks manually as they don't cascade on delete
-            List<AssessmentMark> marks = markRepository.findByAssessmentId(asm.getId());
-            markRepository.deleteAllInBatch(marks);
-
-            // Removing the parent Assessment automatically cascade-deletes components and
-            // workflows
-            assessmentRepository.delete(asm);
+        if (all.isEmpty()) {
+            return;
         }
+
+        List<Long> ids = new ArrayList<>();
+        for (Assessment asm : all) {
+            ids.add(asm.getId());
+        }
+
+        // Native SQL deletes ensure no cascading constraint bugs occur during JPA
+        // transaction flush
+        entityManager.createNativeQuery("DELETE FROM assessment_marks WHERE assessment_id IN (:ids)")
+                .setParameter("ids", ids)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM assessment_workflows WHERE assessment_id IN (:ids)")
+                .setParameter("ids", ids)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM assessment_components WHERE assessment_id IN (:ids)")
+                .setParameter("ids", ids)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM assessments WHERE id IN (:ids)")
+                .setParameter("ids", ids)
+                .executeUpdate();
     }
 }
