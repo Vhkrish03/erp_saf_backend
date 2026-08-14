@@ -21,6 +21,11 @@ public class AssessmentController {
         this.assessmentService = assessmentService;
     }
 
+    @GetMapping("/test-status")
+    public ResponseEntity<String> getTestStatus() {
+        return ResponseEntity.ok("V2_LIVE");
+    }
+
     @PostMapping
     public ResponseEntity<Assessment> createAssessment(@RequestBody Assessment assessment) {
         return ResponseEntity.ok(assessmentService.createAssessment(assessment));
