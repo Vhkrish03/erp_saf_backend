@@ -17,19 +17,22 @@ public class AssessmentService {
     private final AssessmentWeightageRepository weightageRepository;
     private final AssessmentWorkflowRepository workflowRepository;
     private final StudentRepository studentRepository;
+    private final SubjectRepository subjectRepository;
 
     public AssessmentService(AssessmentRepository assessmentRepository,
             AssessmentComponentRepository componentRepository,
             AssessmentMarkRepository markRepository,
             AssessmentWeightageRepository weightageRepository,
             AssessmentWorkflowRepository workflowRepository,
-            StudentRepository studentRepository) {
+            StudentRepository studentRepository,
+            SubjectRepository subjectRepository) {
         this.assessmentRepository = assessmentRepository;
         this.componentRepository = componentRepository;
         this.markRepository = markRepository;
         this.weightageRepository = weightageRepository;
         this.workflowRepository = workflowRepository;
         this.studentRepository = studentRepository;
+        this.subjectRepository = subjectRepository;
     }
 
     // Initialize Default Weightages if not exists
@@ -74,6 +77,28 @@ public class AssessmentService {
     // Create an assessment (by class incharge or admin)
     @Transactional
     public Assessment createAssessment(Assessment assessment) {
+        if (assessment.getSubject() != null) {
+            Subject dbSubject = null;
+            if (assessment.getSubject().getId() != null) {
+                dbSubject = subjectRepository.findById(assessment.getSubject().getId()).orElse(null);
+            }
+            if (dbSubject == null && assessment.getSubject().getCode() != null) {
+                dbSubject = subjectRepository.findByCode(assessment.getSubject().getCode()).orElse(null);
+            }
+            if (dbSubject == null) {
+                Subject defaultSub = new Subject();
+                defaultSub.setCode(
+                        assessment.getSubject().getCode() != null ? assessment.getSubject().getCode() : "CS8791");
+                defaultSub.setName(assessment.getSubject().getName() != null ? assessment.getSubject().getName()
+                        : "Cloud Computing");
+                defaultSub
+                        .setFaculty(assessment.getSubject().getFaculty() != null ? assessment.getSubject().getFaculty()
+                                : "Vinitha Mam");
+                defaultSub.setCredits(3);
+                dbSubject = subjectRepository.save(defaultSub);
+            }
+            assessment.setSubject(dbSubject);
+        }
         assessment.setStatus("DRAFT");
         Assessment saved = assessmentRepository.save(assessment);
 
