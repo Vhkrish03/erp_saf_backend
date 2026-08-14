@@ -135,4 +135,17 @@ public class AssessmentController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/clear")
+    public ResponseEntity<Void> clearClassAssessments(
+            @RequestParam String department,
+            @RequestParam String semester,
+            @RequestParam String section) {
+        try {
+            assessmentService.clearClassAssessments(department, semester, section);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

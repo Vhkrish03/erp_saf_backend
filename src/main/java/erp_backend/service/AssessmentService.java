@@ -368,4 +368,28 @@ public class AssessmentService {
         }
         return compMap;
     }
+
+    @Transactional
+    public void clearClassAssessments(String department, String semester, String section) {
+        List<Assessment> weekly = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
+                semester, section, "WEEKLY");
+        List<Assessment> iat = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
+                section, "IAT");
+
+        List<Assessment> all = new ArrayList<>();
+        all.addAll(weekly);
+        all.addAll(iat);
+
+        for (Assessment asm : all) {
+            List<AssessmentMark> marks = markRepository.findByAssessmentId(asm.getId());
+            markRepository.deleteAllInBatch(marks);
+
+            workflowRepository.findByAssessmentId(asm.getId()).ifPresent(workflowRepository::delete);
+
+            List<AssessmentComponent> components = componentRepository.findByAssessmentId(asm.getId());
+            componentRepository.deleteAllInBatch(components);
+
+            assessmentRepository.delete(asm);
+        }
+    }
 }
