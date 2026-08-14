@@ -137,7 +137,7 @@ public class AssessmentController {
     }
 
     @DeleteMapping("/clear")
-    public ResponseEntity<Void> clearClassAssessments(
+    public ResponseEntity<?> clearClassAssessments(
             @RequestParam String department,
             @RequestParam String semester,
             @RequestParam String section) {
@@ -145,7 +145,8 @@ public class AssessmentController {
             assessmentService.clearClassAssessments(department, semester, section);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error clearing assessments: " + e.getMessage());
         }
     }
 }
