@@ -10,4 +10,8 @@ import java.util.Optional;
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
     Optional<Subject> findByCode(String code);
+
+    java.util.List<Subject> findByDepartment(String department);
+
+    java.util.List<Subject> findByDepartmentAndSemester(String department, int semester);
 }

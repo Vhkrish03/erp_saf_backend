@@ -24,6 +24,30 @@ public class TimetableService {
         return repository.findByDay(day);
     }
 
+    public List<Timetable> getByDayAndFilters(String day, String department, String year, String semester,
+            String section, String academicYear) {
+        if (department == null || year == null || semester == null || section == null) {
+            return repository.findByDay(day);
+        }
+        if (academicYear != null && !academicYear.isEmpty()) {
+            return repository.findByDayAndDepartmentAndYearAndSemesterAndSectionAndAcademicYear(day, department, year,
+                    semester, section, academicYear);
+        } else {
+            return repository.findByDayAndDepartmentAndYearAndSemesterAndSection(day, department, year, semester,
+                    section);
+        }
+    }
+
+    public List<Timetable> getStudentTimetable(String department, String year, String semester, String section,
+            String academicYear) {
+        if (academicYear != null && !academicYear.isEmpty()) {
+            return repository.findByDepartmentAndYearAndSemesterAndSectionAndAcademicYear(department, year, semester,
+                    section, academicYear);
+        } else {
+            return repository.findByDepartmentAndYearAndSemesterAndSection(department, year, semester, section);
+        }
+    }
+
     // Retrieve the timetable schedule for the logged-in teacher.
     public List<Timetable> getTeacherTimetable(String employeeId) {
         return repository.findByEmployeeId(employeeId);

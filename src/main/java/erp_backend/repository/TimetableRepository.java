@@ -13,4 +13,16 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     // Fetch all timetable entries assigned to a specific teacher using Employee ID
     List<Timetable> findByEmployeeId(String employeeId);
 
+    List<Timetable> findByDepartmentAndYearAndSemesterAndSection(String department, String year, String semester,
+            String section);
+
+    List<Timetable> findByDepartmentAndYearAndSemesterAndSectionAndAcademicYear(String department, String year,
+            String semester, String section, String academicYear);
+
+    List<Timetable> findByDayAndDepartmentAndYearAndSemesterAndSection(String day, String department, String year,
+            String semester, String section);
+
+    List<Timetable> findByDayAndDepartmentAndYearAndSemesterAndSectionAndAcademicYear(String day, String department,
+            String year, String semester, String section, String academicYear);
+
 }
