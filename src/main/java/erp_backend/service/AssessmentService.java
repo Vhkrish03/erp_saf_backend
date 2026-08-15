@@ -186,6 +186,10 @@ public class AssessmentService {
                 markToSave.setUpdatedAt(LocalDateTime.now());
             } else {
                 markToSave = mark;
+                Student persistentStudent = studentRepository.findById(mark.getStudent().getId())
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("Student not found: " + mark.getStudent().getId()));
+                markToSave.setStudent(persistentStudent);
                 markToSave.setAssessment(assessment);
                 markToSave.setComponent(component);
                 markToSave.setEnteredBy(facultyId);
