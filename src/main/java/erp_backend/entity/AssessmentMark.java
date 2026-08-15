@@ -1,5 +1,6 @@
 package erp_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ public class AssessmentMark {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assessment_id")
+    @JsonIgnore
     private Assessment assessment;
 
     @ManyToOne(fetch = FetchType.EAGER)
