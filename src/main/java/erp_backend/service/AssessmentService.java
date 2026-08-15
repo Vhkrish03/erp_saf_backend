@@ -292,13 +292,29 @@ public class AssessmentService {
     }
 
     // GET consolidated class reports for IAT marks
+    @Transactional(readOnly = true)
     public Map<String, Object> getConsolidatedMarksReport(String department, String semester, String section) {
         List<Student> students = studentRepository.findByDepartmentAndSemesterAndSection(department, semester, section);
+        List<Assessment> weeklyList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
+                semester, section, "WEEKLY");
         List<Assessment> iatList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
                 semester, section, "IAT");
 
         Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> studentReports = new ArrayList<>();
+
+        // Group assessments by subject to get list of unique subjects
+        Set<Subject> subjects = new HashSet<>();
+        for (Assessment asm : weeklyList) {
+            if (asm.getSubject() != null) {
+                subjects.add(asm.getSubject());
+            }
+        }
+        for (Assessment asm : iatList) {
+            if (asm.getSubject() != null) {
+                subjects.add(asm.getSubject());
+            }
+        }
 
         for (Student student : students) {
             Map<String, Object> stuRpt = new HashMap<>();
@@ -306,53 +322,93 @@ public class AssessmentService {
             stuRpt.put("studentName", student.getName());
             stuRpt.put("rollNumber", student.getRollNumber());
 
-            double iat1TotalWeightMark = 0.0;
-            double iat2TotalWeightMark = 0.0;
-            boolean iat1Found = false;
-            boolean iat2Found = false;
+            List<Map<String, Object>> subjectMarksList = new ArrayList<>();
 
-            for (Assessment iat : iatList) {
-                boolean isIat1 = iat.getName().equalsIgnoreCase("IAT 1");
-                boolean isIat2 = iat.getName().equalsIgnoreCase("IAT 2");
+            for (Subject subject : subjects) {
+                Map<String, Object> subMap = new HashMap<>();
+                subMap.put("subjectCode", subject.getCode());
+                subMap.put("subjectName", subject.getName());
 
-                if (!isIat1 && !isIat2)
-                    continue;
-
-                double weightedSum = 0.0;
-                List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(iat.getId(),
-                        student.getId());
-
-                for (AssessmentMark mark : marks) {
-                    AssessmentComponent comp = mark.getComponent();
-                    double componentPercent = mark.getMarksObtained() / comp.getMaxMarks();
-                    weightedSum += componentPercent * comp.getMaxMarks() * comp.getWeightage();
+                // 1. Get Weekly/Daily Test marks (1 to 6)
+                Map<String, Double> dtMarks = new HashMap<>();
+                for (int i = 1; i <= 6; i++) {
+                    dtMarks.put("Daily Test " + i, null);
                 }
-
-                if (isIat1) {
-                    stuRpt.put("iat1Marks", getComponentMarksMap(marks));
-                    stuRpt.put("iat1Internal", weightedSum);
-                    iat1TotalWeightMark = weightedSum;
-                    iat1Found = true;
-                } else {
-                    stuRpt.put("iat2Marks", getComponentMarksMap(marks));
-                    stuRpt.put("iat2Internal", weightedSum);
-                    iat2TotalWeightMark = weightedSum;
-                    iat2Found = true;
+                for (Assessment weekly : weeklyList) {
+                    if (weekly.getSubject() != null
+                            && weekly.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
+                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(weekly.getId(),
+                                student.getId());
+                        if (!marks.isEmpty()) {
+                            dtMarks.put(weekly.getName().trim(), marks.get(0).getMarksObtained());
+                        }
+                    }
                 }
+                subMap.put("dailyTests", dtMarks);
+
+                // 2. Get IAT 1 & IAT 2 components marks
+                Map<String, Double> iat1Marks = new HashMap<>();
+                Map<String, Double> iat2Marks = new HashMap<>();
+                double iat1Weighted = 0.0;
+                double iat2Weighted = 0.0;
+                boolean iat1Found = false;
+                boolean iat2Found = false;
+
+                for (Assessment iat : iatList) {
+                    if (iat.getSubject() != null && iat.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
+                        boolean isIat1 = iat.getName().equalsIgnoreCase("IAT 1")
+                                || iat.getName().equalsIgnoreCase("IAT-1");
+                        boolean isIat2 = iat.getName().equalsIgnoreCase("IAT 2")
+                                || iat.getName().equalsIgnoreCase("IAT-2");
+
+                        if (!isIat1 && !isIat2)
+                            continue;
+
+                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(iat.getId(),
+                                student.getId());
+                        double weightedSum = 0.0;
+                        Map<String, Double> compMap = new HashMap<>();
+
+                        for (AssessmentMark mark : marks) {
+                            AssessmentComponent comp = mark.getComponent();
+                            double componentPercent = comp.getMaxMarks() > 0
+                                    ? mark.getMarksObtained() / comp.getMaxMarks()
+                                    : 0.0;
+                            weightedSum += componentPercent * comp.getMaxMarks() * comp.getWeightage();
+                            compMap.put(comp.getComponentType().toUpperCase(), mark.getMarksObtained());
+                        }
+
+                        if (isIat1) {
+                            iat1Marks = compMap;
+                            iat1Weighted = weightedSum;
+                            iat1Found = true;
+                        } else {
+                            iat2Marks = compMap;
+                            iat2Weighted = weightedSum;
+                            iat2Found = true;
+                        }
+                    }
+                }
+                subMap.put("iat1", iat1Marks);
+                subMap.put("iat2", iat2Marks);
+                subMap.put("iat1Internal", iat1Weighted);
+                subMap.put("iat2Internal", iat2Weighted);
+
+                double consolidated = 0.0;
+                if (iat1Found && iat2Found) {
+                    consolidated = (iat1Weighted + iat2Weighted) / 2.0;
+                } else if (iat1Found) {
+                    consolidated = iat1Weighted;
+                } else if (iat2Found) {
+                    consolidated = iat2Weighted;
+                }
+                subMap.put("consolidatedInternal", consolidated);
+                subMap.put("finalInternal", Math.round(consolidated));
+
+                subjectMarksList.add(subMap);
             }
 
-            double consolidated = 0.0;
-            if (iat1Found && iat2Found) {
-                consolidated = (iat1TotalWeightMark + iat2TotalWeightMark) / 2.0;
-            } else if (iat1Found) {
-                consolidated = iat1TotalWeightMark;
-            } else if (iat2Found) {
-                consolidated = iat2TotalWeightMark;
-            }
-
-            stuRpt.put("consolidatedInternal", consolidated);
-            stuRpt.put("finalInternal", Math.round(consolidated)); // Round to neat integers
-
+            stuRpt.put("subjectMarks", subjectMarksList);
             studentReports.add(stuRpt);
         }
 
