@@ -11,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 /**
  * REST Controller for the Fees Management module.
@@ -86,6 +89,21 @@ public class FeeController {
     @GetMapping("/student-fees/student/{studentId}")
     public ResponseEntity<List<StudentFeeDto>> getFeesForStudent(@PathVariable String studentId) {
         return ResponseEntity.ok(feeService.getFeesForStudent(studentId));
+    }
+
+    @GetMapping("/{studentId}")
+    public ResponseEntity<List<Map<String, Object>>> getOldFeesCompatibility(@PathVariable String studentId) {
+        List<StudentFeeDto> studentFees = feeService.getFeesForStudent(studentId);
+        List<Map<String, Object>> response = studentFees.stream().map(sf -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("particular", sf.getFeeCategory());
+            map.put("amount", sf.getTotalFee());
+            map.put("isPaid", "PAID".equalsIgnoreCase(sf.getPaymentStatus()));
+            map.put("paid", "PAID".equalsIgnoreCase(sf.getPaymentStatus()));
+            map.put("dueDate", sf.getDueDate());
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/student-fees/class")
