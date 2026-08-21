@@ -154,4 +154,27 @@ public class FeeController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping("/student-fees/configure-custom")
+    public ResponseEntity<?> configureCustomFees(@RequestBody Map<String, Object> req) {
+        try {
+            String studentId = (String) req.get("studentId");
+            String academicYear = (String) req.get("academicYear");
+            String semester = (String) req.get("semester");
+
+            double tuitionFee = Double.parseDouble(req.get("tuitionFee").toString());
+            double messFee = Double.parseDouble(req.get("messFee").toString());
+            double trainingFee = Double.parseDouble(req.get("trainingFee").toString());
+            double otherFee = Double.parseDouble(req.get("otherFee").toString());
+            double transportFee = Double.parseDouble(req.get("transportFee").toString());
+            double hostelFee = Double.parseDouble(req.get("hostelFee").toString());
+
+            feeService.configureCustomFeesForStudent(
+                    studentId, academicYear, semester,
+                    tuitionFee, messFee, trainingFee, otherFee, transportFee, hostelFee);
+            return ResponseEntity.ok(Map.of("message", "Custom fees configured successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

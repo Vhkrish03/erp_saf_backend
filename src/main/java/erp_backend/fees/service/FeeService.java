@@ -192,4 +192,69 @@ public class FeeService {
         d.setUpdatedAt(sf.getUpdatedAt() != null ? sf.getUpdatedAt().toString() : null);
         return d;
     }
+
+    @Transactional
+    public void configureCustomFeesForStudent(
+            String studentId, String academicYear, String semester,
+            double tuitionFee, double messFee, double trainingFee,
+            double otherFee, double transportFee, double hostelFee) {
+
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
+
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Tuition Fee", tuitionFee);
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Mess Fee", messFee);
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Training Fee", trainingFee);
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Other Fee", otherFee);
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Transport Fee", transportFee);
+        saveOrUpdateCategoryFee(student, academicYear, semester, "Hostel Fee", hostelFee);
+    }
+
+    private void saveOrUpdateCategoryFee(Student student, String academicYear, String semester, String category,
+            double amount) {
+        // Step 1: Find or create standard/dummy FeeStructure for this
+        // category/dept/sem/ay
+        FeeStructure fs = feeStructureRepo.findByDepartmentAndSemesterAndAcademicYear(
+                student.getDepartment(), semester, academicYear).stream()
+                .filter(f -> category.equalsIgnoreCase(f.getFeeCategory())).findFirst().orElseGet(() -> {
+                    FeeStructure newFs = new FeeStructure();
+                    newFs.setAcademicYear(academicYear);
+                    newFs.setSemester(semester);
+                    newFs.setDepartment(student.getDepartment());
+                    newFs.setFeeCategory(category);
+                    newFs.setTotalAmount(amount > 0 ? amount : 1000.0);
+                    newFs.setActive(true);
+                    newFs.setCreatedBy("ADMIN_CUSTOM");
+                    return feeStructureRepo.save(newFs);
+                });
+
+        // Step 2: See if StudentFee already exists
+        StudentFee sf = studentFeeRepo.findByStudentIdAndFeeStructureId(student.getId(), fs.getId()).orElse(null);
+
+        if (sf != null) {
+            if (amount <= 0) {
+                if (sf.getAmountPaid() == 0) {
+                    studentFeeRepo.delete(sf);
+                } else {
+                    sf.setTotalFee(0);
+                    sf.recomputeStatus();
+                    studentFeeRepo.save(sf);
+                }
+            } else {
+                sf.setTotalFee(amount);
+                sf.recomputeStatus();
+                studentFeeRepo.save(sf);
+            }
+        } else if (amount > 0) {
+            StudentFee newSf = new StudentFee();
+            newSf.setStudent(student);
+            newSf.setFeeStructure(fs);
+            newSf.setAcademicYear(academicYear);
+            newSf.setSemester(semester);
+            newSf.setTotalFee(amount);
+            newSf.setAmountPaid(0.0);
+            newSf.recomputeStatus();
+            studentFeeRepo.save(newSf);
+        }
+    }
 }
