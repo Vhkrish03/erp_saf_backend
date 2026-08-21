@@ -30,6 +30,10 @@ public class ExamResult {
 
     private int maxMarks;
 
+    private int credits;
+
+    private String resultStatus; // PASS, FAIL
+
     @ManyToOne
     @JoinColumn(name = "semester_result_id")
     @JsonIgnore
@@ -96,5 +100,21 @@ public class ExamResult {
 
     public void setSemesterResult(SemesterResult semesterResult) {
         this.semesterResult = semesterResult;
+    }
+
+    public int getCredits() {
+        return credits;
+    }
+
+    public void setCredits(int credits) {
+        this.credits = credits;
+    }
+
+    public String getResultStatus() {
+        return resultStatus;
+    }
+
+    public void setResultStatus(String resultStatus) {
+        this.resultStatus = resultStatus;
     }
 }

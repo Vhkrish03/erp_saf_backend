@@ -22,16 +22,35 @@ public class SemesterResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String semesterName;    
+    private String semesterName;
 
     private double sgpa;
+
+    private String status; // DRAFT, ENTERED, VERIFIED, PUBLISHED, LOCKED
+    private String academicYear;
+    private String examination; // e.g. "End Semester Examination"
+    private String examSession; // e.g. "Nov/Dec 2026"
+    private java.time.LocalDateTime publishedAt;
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
+
+    @jakarta.persistence.PrePersist
+    protected void onCreate() {
+        createdAt = java.time.LocalDateTime.now();
+        updatedAt = java.time.LocalDateTime.now();
+    }
+
+    @jakarta.persistence.PreUpdate
+    protected void onUpdate() {
+        updatedAt = java.time.LocalDateTime.now();
+    }
 
     @ManyToOne
     @JoinColumn(name = "student_id")
     @JsonIgnore
     private Student student;
 
-    @OneToMany(mappedBy = "semesterResult", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "semesterResult", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExamResult> results;
 
     public SemesterResult() {
@@ -71,5 +90,61 @@ public class SemesterResult {
 
     public void setResults(List<ExamResult> results) {
         this.results = results;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getAcademicYear() {
+        return academicYear;
+    }
+
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+
+    public String getExamination() {
+        return examination;
+    }
+
+    public void setExamination(String examination) {
+        this.examination = examination;
+    }
+
+    public String getExamSession() {
+        return examSession;
+    }
+
+    public void setExamSession(String examSession) {
+        this.examSession = examSession;
+    }
+
+    public java.time.LocalDateTime getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(java.time.LocalDateTime publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public java.time.LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
