@@ -31,7 +31,7 @@ public class Student {
 
     @Column(name = "emergency_contact_name")
     private String emergencyContactName;
-    
+
     @Column(name = "emergency_contact_phone")
     private String emergencyContactPhone;
 
@@ -39,7 +39,40 @@ public class Student {
     private String advisor;
     private double cgpa;
 
+    @Column(name = "residency_type")
+    private String residencyType = "DAY_SCHOLAR";
+
+    @Column(name = "transport_required")
+    private Boolean transportRequired = false;
+
+    @Column(name = "transport_status")
+    private String transportStatus = "NOT_ASSIGNED";
+
     public Student() {
+    }
+
+    public String getResidencyType() {
+        return residencyType;
+    }
+
+    public void setResidencyType(String residencyType) {
+        this.residencyType = residencyType;
+    }
+
+    public Boolean getTransportRequired() {
+        return transportRequired;
+    }
+
+    public void setTransportRequired(Boolean transportRequired) {
+        this.transportRequired = transportRequired;
+    }
+
+    public String getTransportStatus() {
+        return transportStatus;
+    }
+
+    public void setTransportStatus(String transportStatus) {
+        this.transportStatus = transportStatus;
     }
 
     // Getters
@@ -174,6 +207,3 @@ public class Student {
         this.cgpa = cgpa;
     }
 }
-
-
-

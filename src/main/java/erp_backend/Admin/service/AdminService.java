@@ -110,6 +110,9 @@ public class AdminService {
         student.setAddress(details.getAddress());
         student.setAdvisor(details.getAdvisor());
         student.setCgpa(details.getCgpa());
+        student.setResidencyType(details.getResidencyType());
+        student.setTransportRequired(details.getTransportRequired());
+        student.setTransportStatus(details.getTransportStatus());
 
         return studentRepository.save(student);
     }

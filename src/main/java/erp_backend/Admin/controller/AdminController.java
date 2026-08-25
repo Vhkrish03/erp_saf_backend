@@ -59,6 +59,15 @@ public class AdminController {
             student.setCgpa(
                     studentMap.get("cgpa") != null ? Double.parseDouble(studentMap.get("cgpa").toString()) : 0.0);
 
+            student.setResidencyType(
+                    studentMap.get("residencyType") != null ? (String) studentMap.get("residencyType") : "DAY_SCHOLAR");
+            student.setTransportRequired(
+                    studentMap.get("transportRequired") != null ? (Boolean) studentMap.get("transportRequired")
+                            : false);
+            student.setTransportStatus(
+                    studentMap.get("transportStatus") != null ? (String) studentMap.get("transportStatus")
+                            : "NOT_ASSIGNED");
+
             if (student.getId() == null || student.getId().trim().isEmpty() ||
                     student.getEmail() == null || student.getEmail().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
