@@ -166,7 +166,7 @@ public class AdminTransportController {
             bus.setRegistrationNumber((String) payload.get("registrationNumber"));
             bus.setBusType((String) payload.get("busType"));
             bus.setCapacity(Integer.parseInt(payload.get("capacity").toString()));
-            bus.setConductorName((String) payload.get("conductorName"));
+            bus.setBusInchargeName((String) payload.get("busInchargeName"));
             bus.setStatus((String) payload.get("status"));
 
             if (payload.get("driverId") != null) {
@@ -194,7 +194,7 @@ public class AdminTransportController {
             bus.setRegistrationNumber((String) payload.get("registrationNumber"));
             bus.setBusType((String) payload.get("busType"));
             bus.setCapacity(Integer.parseInt(payload.get("capacity").toString()));
-            bus.setConductorName((String) payload.get("conductorName"));
+            bus.setBusInchargeName((String) payload.get("busInchargeName"));
             bus.setStatus((String) payload.get("status"));
 
             if (payload.get("driverId") != null) {

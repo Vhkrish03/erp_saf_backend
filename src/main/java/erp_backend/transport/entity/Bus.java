@@ -26,8 +26,8 @@ public class Bus {
     @JoinColumn(name = "driver_id")
     private Driver driver;
 
-    @Column(name = "conductor_name")
-    private String conductorName;
+    @Column(name = "bus_incharge_name")
+    private String busInchargeName;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "route_id")
@@ -104,12 +104,12 @@ public class Bus {
         this.driver = driver;
     }
 
-    public String getConductorName() {
-        return conductorName;
+    public String getBusInchargeName() {
+        return busInchargeName;
     }
 
-    public void setConductorName(String conductorName) {
-        this.conductorName = conductorName;
+    public void setBusInchargeName(String busInchargeName) {
+        this.busInchargeName = busInchargeName;
     }
 
     public Route getRoute() {
