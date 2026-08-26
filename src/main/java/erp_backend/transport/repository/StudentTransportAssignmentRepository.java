@@ -17,4 +17,8 @@ public interface StudentTransportAssignmentRepository extends JpaRepository<Stud
     long countActiveAssignmentsByBusId(Long busId);
 
     List<StudentTransportAssignment> findByBusIdAndStatus(Long busId, String status);
+
+    void deleteByRouteId(Long routeId);
+
+    void deleteByBusId(Long busId);
 }

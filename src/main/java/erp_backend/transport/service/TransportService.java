@@ -84,6 +84,8 @@ public class TransportService {
     }
 
     public void deleteRoute(Long id) {
+        assignmentRepository.deleteByRouteId(id);
+        busStopRepository.deleteByRouteId(id);
         routeRepository.deleteById(id);
     }
 
@@ -126,6 +128,7 @@ public class TransportService {
     }
 
     public void deleteBus(Long id) {
+        assignmentRepository.deleteByBusId(id);
         busRepository.deleteById(id);
     }
 
@@ -170,8 +173,10 @@ public class TransportService {
             throw new RuntimeException("Bus capacity has been reached.");
         }
 
-        // Deactivate any existing active assignment for this student (to preserve history)
-        Optional<StudentTransportAssignment> existingAssign = assignmentRepository.findByStudentIdAndStatus(studentId, "ACTIVE");
+        // Deactivate any existing active assignment for this student (to preserve
+        // history)
+        Optional<StudentTransportAssignment> existingAssign = assignmentRepository.findByStudentIdAndStatus(studentId,
+                "ACTIVE");
         if (existingAssign.isPresent()) {
             StudentTransportAssignment current = existingAssign.get();
             current.setStatus("INACTIVE");
@@ -231,7 +236,8 @@ public class TransportService {
     // ==========================================
     // TRACKING & LOCATION
     // ==========================================
-    public void updateBusLocation(Long busId, Double latitude, Double longitude, Double speed, Double heading, String status) {
+    public void updateBusLocation(Long busId, Double latitude, Double longitude, Double speed, Double heading,
+            String status) {
         // Validation: Verify the bus exists
         if (!busRepository.existsById(busId)) {
             throw new RuntimeException("Bus not found with ID: " + busId);
