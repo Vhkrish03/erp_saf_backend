@@ -110,9 +110,15 @@ public class AdminService {
         student.setAddress(details.getAddress());
         student.setAdvisor(details.getAdvisor());
         student.setCgpa(details.getCgpa());
-        student.setResidencyType(details.getResidencyType());
-        student.setTransportRequired(details.getTransportRequired());
-        student.setTransportStatus(details.getTransportStatus());
+        if (details.getResidencyType() != null) {
+            student.setResidencyType(details.getResidencyType());
+        }
+        if (details.getTransportRequired() != null) {
+            student.setTransportRequired(details.getTransportRequired());
+        }
+        if (details.getTransportStatus() != null) {
+            student.setTransportStatus(details.getTransportStatus());
+        }
 
         return studentRepository.save(student);
     }
