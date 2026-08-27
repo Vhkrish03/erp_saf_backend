@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import erp_backend.attendance.entity.AttendanceReport;
@@ -72,6 +73,27 @@ public class AttendanceReportController {
             return ResponseEntity.ok(reports);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAttendance(
+            @RequestParam String department,
+            @RequestParam String studentYear,
+            @RequestParam String section,
+            @RequestParam String subject,
+            @RequestParam String date) {
+        try {
+            LocalDate localDate = LocalDate.parse(date);
+            AttendanceReport report = service.getExistingReport(department, studentYear, section, subject, localDate);
+            if (report != null) {
+                return ResponseEntity.ok(Map.of("exists", true, "report", report));
+            } else {
+                return ResponseEntity.ok(Map.of("exists", false));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Error checking attendance: " + e.getMessage()));
         }
     }
 }

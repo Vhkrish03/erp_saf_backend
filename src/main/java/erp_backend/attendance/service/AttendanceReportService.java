@@ -96,4 +96,14 @@ public class AttendanceReportService {
     public List<AttendanceReport> getReportsForDepartment(String department) {
         return repository.findByDepartmentOrderByDateDesc(department);
     }
+
+    public AttendanceReport getExistingReport(
+            String department,
+            String studentYear,
+            String section,
+            String subject,
+            java.time.LocalDate date) {
+        return repository.findByDepartmentAndStudentYearAndSectionAndSubjectAndDate(
+                department, studentYear, section, subject, date).orElse(null);
+    }
 }
