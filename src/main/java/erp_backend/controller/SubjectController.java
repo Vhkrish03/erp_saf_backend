@@ -32,6 +32,30 @@ public class SubjectController {
         return service.getSubjectsByDeptAndSemester(dept, sem);
     }
 
+    @GetMapping("/filter")
+    public List<Subject> getSubjectsByFilter(
+            @RequestParam String department,
+            @RequestParam String year,
+            @RequestParam int semester) {
+        String normalizedYear = normalizeYear(year);
+        return service.getSubjectsByFilter(department, normalizedYear, semester);
+    }
+
+    private String normalizeYear(String year) {
+        if (year == null)
+            return "";
+        String trimmed = year.trim();
+        if (trimmed.equals("1") || trimmed.equalsIgnoreCase("1st year"))
+            return "1st year";
+        if (trimmed.equals("2") || trimmed.equalsIgnoreCase("2nd year"))
+            return "2nd year";
+        if (trimmed.equals("3") || trimmed.equalsIgnoreCase("3rd year"))
+            return "3rd year";
+        if (trimmed.equals("4") || trimmed.equalsIgnoreCase("4th year"))
+            return "4th year";
+        return trimmed;
+    }
+
     @PostMapping
     public ResponseEntity<Subject> createSubject(@RequestBody Subject subject) {
         return ResponseEntity.ok(service.createSubject(subject));

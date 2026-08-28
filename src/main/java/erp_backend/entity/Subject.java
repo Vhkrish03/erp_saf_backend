@@ -24,6 +24,7 @@ public class Subject {
     private String employeeId;
 
     private String department;
+    private String year;
     private int semester;
     private String subjectType;
     private String academicYear;
@@ -141,6 +142,14 @@ public class Subject {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getYear() {
+        return year;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
     }
 
     public int getSemester() {
