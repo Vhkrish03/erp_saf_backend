@@ -52,6 +52,13 @@ public class ErpBackendApplication {
                     }
                 }
             });
+
+            System.out.println("====== STARTUP DB DIAGNOSTIC: CURRENT SUBJECTS ======");
+            subjectRepository.findAll().forEach(s -> {
+                System.out.format("ID: %d | Code: %s | Name: %s | Dept: %s | Sem: %d | Year: %s\n",
+                        s.getId(), s.getCode(), s.getName(), s.getDepartment(), s.getSemester(), s.getYear());
+            });
+            System.out.println("====================================================");
         };
     }
 }
