@@ -45,13 +45,13 @@ public class SubjectController {
         if (year == null)
             return "";
         String trimmed = year.trim();
-        if (trimmed.equals("1") || trimmed.equalsIgnoreCase("1st year"))
+        if (trimmed.equals("1") || trimmed.equalsIgnoreCase("1st year") || trimmed.equalsIgnoreCase("I"))
             return "1st year";
-        if (trimmed.equals("2") || trimmed.equalsIgnoreCase("2nd year"))
+        if (trimmed.equals("2") || trimmed.equalsIgnoreCase("2nd year") || trimmed.equalsIgnoreCase("II"))
             return "2nd year";
-        if (trimmed.equals("3") || trimmed.equalsIgnoreCase("3rd year"))
+        if (trimmed.equals("3") || trimmed.equalsIgnoreCase("3rd year") || trimmed.equalsIgnoreCase("III"))
             return "3rd year";
-        if (trimmed.equals("4") || trimmed.equalsIgnoreCase("4th year"))
+        if (trimmed.equals("4") || trimmed.equalsIgnoreCase("4th year") || trimmed.equalsIgnoreCase("IV"))
             return "4th year";
         return trimmed;
     }

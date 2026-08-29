@@ -193,10 +193,11 @@ public class ExamCellController {
         try {
             List<Student> students;
             if (year != null && !year.isBlank()) {
+                List<String> yearVariants = getYearVariants(year);
                 if (section != null && !section.isBlank()) {
-                    students = studentRepository.findByDepartmentAndYearAndSection(department, year, section);
+                    students = studentRepository.findByDepartmentAndYearInAndSection(department, yearVariants, section);
                 } else {
-                    students = studentRepository.findByDepartmentAndYear(department, year);
+                    students = studentRepository.findByDepartmentAndYearIn(department, yearVariants);
                 }
             } else {
                 // Map S1-S8 to Roman numerals since students are stored with Roman numeral
@@ -250,6 +251,37 @@ public class ExamCellController {
             return ResponseEntity.ok(summary);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private List<String> getYearVariants(String year) {
+        if (year == null || year.isBlank()) {
+            return java.util.Collections.emptyList();
+        }
+        String clean = year.trim().toUpperCase();
+        switch (clean) {
+            case "I":
+            case "1":
+            case "1ST":
+            case "1ST YEAR":
+                return java.util.Arrays.asList("I", "1", "1st year", "1st");
+            case "II":
+            case "2":
+            case "2ND":
+            case "2ND YEAR":
+                return java.util.Arrays.asList("II", "2", "2nd year", "2nd");
+            case "III":
+            case "3":
+            case "3RD":
+            case "3RD YEAR":
+                return java.util.Arrays.asList("III", "3", "3rd year", "3rd");
+            case "IV":
+            case "4":
+            case "4TH":
+            case "4TH YEAR":
+                return java.util.Arrays.asList("IV", "4", "4th year", "4th");
+            default:
+                return java.util.Arrays.asList(year, year.toLowerCase(), year.toUpperCase());
         }
     }
 
