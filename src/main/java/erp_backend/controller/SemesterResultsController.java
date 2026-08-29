@@ -154,22 +154,31 @@ public class SemesterResultsController {
                         .body(Map.of("message", "Unauthorized access. HOD department mismatch."));
             }
         } else if (teacherId != null && !teacherId.isBlank()) {
+            Teacher t = teacherRepository.findByEmployeeId(teacherId).orElse(null);
+            if (t == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Teacher not found."));
+            }
             List<FacultySubjectAssignment> assignments = facultySubjectAssignmentRepository
                     .findByTeacherEmployeeId(teacherId);
             boolean authorized = assignments.stream()
                     .anyMatch(a -> a.getDepartment().equalsIgnoreCase(student.getDepartment()) &&
-                            mapSemesterToRoman(a.getSemester()).equalsIgnoreCase(student.getSemester()) &&
                             a.getSection().equalsIgnoreCase(student.getSection()));
             if (!authorized) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Unauthorized access. Class assignment mismatch."));
+                boolean deptAuthorized = assignments.stream()
+                        .anyMatch(a -> a.getDepartment().equalsIgnoreCase(student.getDepartment()));
+                if (!deptAuthorized) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("message", "Unauthorized access. Class assignment mismatch."));
+                }
             }
         }
 
         List<ExamCellResult> results = examCellResultRepository.findByStudentId(studentId);
         if (semester != null && !semester.isBlank()) {
+            String targetSem = mapSemesterToRoman(semester);
             Optional<ExamCellResult> opt = results.stream()
-                    .filter(r -> r.getSemesterName().equalsIgnoreCase(semester))
+                    .filter(r -> r.getSemesterName().equalsIgnoreCase(semester) ||
+                            mapSemesterToRoman(r.getSemesterName()).equalsIgnoreCase(targetSem))
                     .findFirst();
 
             if (opt.isPresent()) {
@@ -244,11 +253,15 @@ public class SemesterResultsController {
         List<Map<String, Object>> response = new ArrayList<>();
 
         for (Student s : students) {
-            String studentSem = s.getSemester();
+            String studentSem = null;
+            if (semester != null && !semester.isBlank()) {
+                studentSem = mapSemesterToRoman(semester);
+            }
             if (studentSem == null || studentSem.isBlank()) {
-                if (semester != null && !semester.isBlank()) {
-                    studentSem = mapSemesterToRoman(semester);
-                } else if (year != null && !year.isBlank()) {
+                studentSem = s.getSemester();
+            }
+            if (studentSem == null || studentSem.isBlank()) {
+                if (year != null && !year.isBlank()) {
                     studentSem = guessSemesterFromYear(year);
                 }
             }
@@ -337,11 +350,15 @@ public class SemesterResultsController {
 
         List<Map<String, Object>> response = new ArrayList<>();
         for (Student s : students) {
-            String studentSem = s.getSemester();
+            String studentSem = null;
+            if (semester != null && !semester.isBlank()) {
+                studentSem = mapSemesterToRoman(semester);
+            }
             if (studentSem == null || studentSem.isBlank()) {
-                if (semester != null && !semester.isBlank()) {
-                    studentSem = mapSemesterToRoman(semester);
-                } else if (year != null && !year.isBlank()) {
+                studentSem = s.getSemester();
+            }
+            if (studentSem == null || studentSem.isBlank()) {
+                if (year != null && !year.isBlank()) {
                     studentSem = guessSemesterFromYear(year);
                 }
             }
@@ -445,11 +462,15 @@ public class SemesterResultsController {
         Map<String, SubjectPerformance> subjectPerfMap = new LinkedHashMap<>();
 
         for (Student s : students) {
-            String studentSem = s.getSemester();
+            String studentSem = null;
+            if (semester != null && !semester.isBlank()) {
+                studentSem = mapSemesterToRoman(semester);
+            }
             if (studentSem == null || studentSem.isBlank()) {
-                if (semester != null && !semester.isBlank()) {
-                    studentSem = mapSemesterToRoman(semester);
-                } else if (year != null && !year.isBlank()) {
+                studentSem = s.getSemester();
+            }
+            if (studentSem == null || studentSem.isBlank()) {
+                if (year != null && !year.isBlank()) {
                     studentSem = guessSemesterFromYear(year);
                 }
             }
