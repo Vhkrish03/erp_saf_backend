@@ -188,53 +188,62 @@ public class ExamCellController {
             @RequestParam String department,
             @RequestParam String semester,
             @RequestParam String academicYear,
+            @RequestParam(required = false) String year,
             @RequestParam(required = false) String section) {
         try {
-            // Map S1-S8 to Roman numerals since students are stored with Roman numeral
-            // semesters in DB
-            String romanSemester = semester;
-            if (semester != null) {
-                switch (semester.trim().toUpperCase()) {
-                    case "S1":
-                    case "1":
-                        romanSemester = "I";
-                        break;
-                    case "S2":
-                    case "2":
-                        romanSemester = "II";
-                        break;
-                    case "S3":
-                    case "3":
-                        romanSemester = "III";
-                        break;
-                    case "S4":
-                    case "4":
-                        romanSemester = "IV";
-                        break;
-                    case "S5":
-                    case "5":
-                        romanSemester = "V";
-                        break;
-                    case "S6":
-                    case "6":
-                        romanSemester = "VI";
-                        break;
-                    case "S7":
-                    case "7":
-                        romanSemester = "VII";
-                        break;
-                    case "S8":
-                    case "8":
-                        romanSemester = "VIII";
-                        break;
-                }
-            }
-
             List<Student> students;
-            if (section != null && !section.isBlank()) {
-                students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSemester, section);
+            if (year != null && !year.isBlank()) {
+                if (section != null && !section.isBlank()) {
+                    students = studentRepository.findByDepartmentAndYearAndSection(department, year, section);
+                } else {
+                    students = studentRepository.findByDepartmentAndYear(department, year);
+                }
             } else {
-                students = studentRepository.findByDepartmentAndSemester(department, romanSemester);
+                // Map S1-S8 to Roman numerals since students are stored with Roman numeral
+                // semesters in DB
+                String romanSemester = semester;
+                if (semester != null) {
+                    switch (semester.trim().toUpperCase()) {
+                        case "S1":
+                        case "1":
+                            romanSemester = "I";
+                            break;
+                        case "S2":
+                        case "2":
+                            romanSemester = "II";
+                            break;
+                        case "S3":
+                        case "3":
+                            romanSemester = "III";
+                            break;
+                        case "S4":
+                        case "4":
+                            romanSemester = "IV";
+                            break;
+                        case "S5":
+                        case "5":
+                            romanSemester = "V";
+                            break;
+                        case "S6":
+                        case "6":
+                            romanSemester = "VI";
+                            break;
+                        case "S7":
+                        case "7":
+                            romanSemester = "VII";
+                            break;
+                        case "S8":
+                        case "8":
+                            romanSemester = "VIII";
+                            break;
+                    }
+                }
+                if (section != null && !section.isBlank()) {
+                    students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSemester,
+                            section);
+                } else {
+                    students = studentRepository.findByDepartmentAndSemester(department, romanSemester);
+                }
             }
             List<Map<String, Object>> summary = examCellService.getClassResultSummary(department, semester,
                     academicYear, students);
