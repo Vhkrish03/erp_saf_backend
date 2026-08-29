@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Dev Helpers ###
+run_backend.bat
+cmd_log.txt
+compile_log.txt
+
