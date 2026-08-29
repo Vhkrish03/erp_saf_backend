@@ -107,13 +107,15 @@ public class ExamCellService {
             result.setPublishedAt(LocalDateTime.now());
         }
 
-        ExamCellResult saved = resultRepository.save(result);
-        // Link subjects back
-        if (saved.getSubjects() != null) {
-            for (ExamCellResultSubject sub : saved.getSubjects()) {
-                sub.setExamCellResult(saved);
+        // Link subjects back BEFORE saving to prevent transient / null property
+        // exceptions
+        if (result.getSubjects() != null) {
+            for (ExamCellResultSubject sub : result.getSubjects()) {
+                sub.setExamCellResult(result);
             }
         }
+
+        ExamCellResult saved = resultRepository.save(result);
 
         // Audit
         auditRepository.save(new ExamCellResultAudit(
