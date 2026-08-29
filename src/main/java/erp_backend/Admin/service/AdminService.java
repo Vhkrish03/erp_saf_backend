@@ -11,10 +11,12 @@ import erp_backend.entity.User;
 import erp_backend.entity.Student;
 import erp_backend.Teacher.entity.Teacher;
 import erp_backend.Hod.entity.Hod;
+import erp_backend.examcell.entity.ExamCellAdmin;
 import erp_backend.repository.UserRepository;
 import erp_backend.repository.StudentRepository;
 import erp_backend.Teacher.repository.TeacherRepository;
 import erp_backend.Hod.repository.HodRepository;
+import erp_backend.examcell.repository.ExamCellAdminRepository;
 
 @Service
 public class AdminService {
@@ -23,15 +25,18 @@ public class AdminService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final HodRepository hodRepository;
+    private final ExamCellAdminRepository examCellAdminRepository;
 
     public AdminService(UserRepository userRepository,
             StudentRepository studentRepository,
             TeacherRepository teacherRepository,
-            HodRepository hodRepository) {
+            HodRepository hodRepository,
+            ExamCellAdminRepository examCellAdminRepository) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
         this.hodRepository = hodRepository;
+        this.examCellAdminRepository = examCellAdminRepository;
     }
 
     // ==========================================
@@ -352,14 +357,103 @@ public class AdminService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
-        // If they are STUDENT, FACULTY, or HOD, delete corresponding record
+        // If they are STUDENT, FACULTY, HOD, or EXAM_CELL, delete corresponding record
         if ("STUDENT".equalsIgnoreCase(user.getRole())) {
             studentRepository.findById(user.getReferenceId()).ifPresent(studentRepository::delete);
         } else if ("FACULTY".equalsIgnoreCase(user.getRole())) {
             teacherRepository.findByEmployeeId(user.getReferenceId()).ifPresent(teacherRepository::delete);
         } else if ("HOD".equalsIgnoreCase(user.getRole())) {
             hodRepository.findByEmployeeId(user.getReferenceId()).ifPresent(hodRepository::delete);
+        } else if ("EXAM_CELL".equalsIgnoreCase(user.getRole())) {
+            examCellAdminRepository.findByEmployeeId(user.getReferenceId()).ifPresent(examCellAdminRepository::delete);
         }
         userRepository.delete(user);
+    }
+
+    // ==========================================
+    // EXAM CELL ADMIN MANAGEMENT
+    // ==========================================
+
+    @Transactional
+    public ExamCellAdmin createExamCellAdmin(ExamCellAdmin examCellAdmin, String password) {
+        if (examCellAdminRepository.existsByEmployeeId(examCellAdmin.getEmployeeId())) {
+            throw new IllegalArgumentException("Employee ID " + examCellAdmin.getEmployeeId() + " already exists.");
+        }
+        if (userRepository.existsByEmail(examCellAdmin.getEmail())) {
+            throw new IllegalArgumentException("Email " + examCellAdmin.getEmail() + " is already registered.");
+        }
+
+        // Save Exam Cell Admin
+        ExamCellAdmin savedAdmin = examCellAdminRepository.save(examCellAdmin);
+
+        // Save corresponding User account
+        User user = new User();
+        user.setFullName(examCellAdmin.getName());
+        user.setEmail(examCellAdmin.getEmail());
+        user.setPassword(password);
+        user.setRole("EXAM_CELL");
+        user.setReferenceId(examCellAdmin.getEmployeeId());
+        user.setIsActive(true);
+        user.setCreatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return savedAdmin;
+    }
+
+    @Transactional
+    public ExamCellAdmin updateExamCellAdmin(Long id, ExamCellAdmin details) {
+        ExamCellAdmin admin = examCellAdminRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Exam Cell Admin not found."));
+
+        // If email changed, check duplicates
+        if (!admin.getEmail().equalsIgnoreCase(details.getEmail())) {
+            if (userRepository.existsByEmail(details.getEmail())) {
+                throw new IllegalArgumentException("Email " + details.getEmail() + " is already registered.");
+            }
+            Optional<User> optUser = userRepository.findByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                user.setEmail(details.getEmail());
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(user);
+            }
+        }
+
+        // Update User name
+        if (!admin.getName().equalsIgnoreCase(details.getName())) {
+            Optional<User> optUser = userRepository.findByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                user.setFullName(details.getName());
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(user);
+            }
+        }
+
+        admin.setName(details.getName());
+        admin.setGender(details.getGender());
+        admin.setDob(details.getDob());
+        admin.setDesignation(details.getDesignation());
+        admin.setPhone(details.getPhone());
+        admin.setEmail(details.getEmail());
+        admin.setAddress(details.getAddress());
+
+        return examCellAdminRepository.save(admin);
+    }
+
+    @Transactional
+    public void deleteExamCellAdmin(Long id) {
+        ExamCellAdmin admin = examCellAdminRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Exam Cell Admin not found."));
+        userRepository.deleteByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
+        examCellAdminRepository.delete(admin);
+    }
+
+    public List<ExamCellAdmin> getAllExamCellAdmins() {
+        return examCellAdminRepository.findAll();
+    }
+
+    public ExamCellAdmin getExamCellAdmin(Long id) {
+        return examCellAdminRepository.findById(id).orElse(null);
     }
 }

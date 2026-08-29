@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import erp_backend.entity.Student;
 import erp_backend.Teacher.entity.Teacher;
 import erp_backend.Hod.entity.Hod;
+import erp_backend.examcell.entity.ExamCellAdmin;
 import erp_backend.entity.User;
 import erp_backend.Admin.service.AdminService;
 
@@ -295,6 +296,88 @@ public class AdminController {
         try {
             adminService.deleteHod(id);
             return ResponseEntity.ok(Map.of("message", "HOD deleted successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // EXAM CELL ADMINS CRUD
+    // ==========================================
+
+    @PostMapping("/exam-cell-admins")
+    public ResponseEntity<?> createExamCellAdmin(@RequestBody Map<String, Object> payload) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> adminMap = (Map<String, Object>) payload.get("examCellAdmin");
+            String password = (String) payload.get("password");
+
+            if (adminMap == null || password == null || password.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Missing exam cell admin data or password"));
+            }
+
+            ExamCellAdmin examCellAdmin = new ExamCellAdmin();
+            examCellAdmin.setEmployeeId((String) adminMap.get("employeeId"));
+            examCellAdmin.setName((String) adminMap.get("name"));
+            examCellAdmin.setGender((String) adminMap.get("gender"));
+
+            if (adminMap.get("dob") != null && !adminMap.get("dob").toString().trim().isEmpty()) {
+                examCellAdmin.setDob(java.time.LocalDate.parse(adminMap.get("dob").toString()));
+            }
+            examCellAdmin.setDesignation((String) adminMap.get("designation"));
+            examCellAdmin.setPhone((String) adminMap.get("phone"));
+            examCellAdmin.setEmail((String) adminMap.get("email"));
+            examCellAdmin.setAddress((String) adminMap.get("address"));
+
+            if (examCellAdmin.getEmployeeId() == null || examCellAdmin.getEmployeeId().trim().isEmpty() ||
+                    examCellAdmin.getEmail() == null || examCellAdmin.getEmail().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Employee ID and Email are required"));
+            }
+
+            ExamCellAdmin created = adminService.createExamCellAdmin(examCellAdmin, password);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/exam-cell-admins")
+    public ResponseEntity<List<ExamCellAdmin>> getAllExamCellAdmins() {
+        return ResponseEntity.ok(adminService.getAllExamCellAdmins());
+    }
+
+    @GetMapping("/exam-cell-admins/{id}")
+    public ResponseEntity<ExamCellAdmin> getExamCellAdmin(@PathVariable Long id) {
+        ExamCellAdmin admin = adminService.getExamCellAdmin(id);
+        if (admin == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(admin);
+    }
+
+    @PutMapping("/exam-cell-admins/{id}")
+    public ResponseEntity<?> updateExamCellAdmin(@PathVariable Long id, @RequestBody ExamCellAdmin details) {
+        try {
+            ExamCellAdmin updated = adminService.updateExamCellAdmin(id, details);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/exam-cell-admins/{id}")
+    public ResponseEntity<?> deleteExamCellAdmin(@PathVariable Long id) {
+        try {
+            adminService.deleteExamCellAdmin(id);
+            return ResponseEntity.ok(Map.of("message", "Exam Cell Admin deleted successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }

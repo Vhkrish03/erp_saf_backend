@@ -14,8 +14,23 @@ public class ErpBackendApplication {
     }
 
     @Bean
-    public CommandLineRunner initDatabase(SubjectRepository subjectRepository) {
+    public CommandLineRunner initDatabase(SubjectRepository subjectRepository,
+            erp_backend.repository.UserRepository userRepository) {
         return args -> {
+            // Seed EXAM_CELL admin if not exists
+            if (userRepository.findByReferenceIdAndRole("EXM001", "EXAM_CELL").isEmpty()) {
+                erp_backend.entity.User examCellUser = new erp_backend.entity.User();
+                examCellUser.setFullName("Exam Cell Admin");
+                examCellUser.setEmail("examcell@college.edu");
+                examCellUser.setPassword("password");
+                examCellUser.setRole("EXAM_CELL");
+                examCellUser.setReferenceId("EXM001");
+                examCellUser.setIsActive(true);
+                examCellUser.setCreatedAt(java.time.LocalDateTime.now());
+                userRepository.save(examCellUser);
+                System.out.println("====== STARTUP DB SYNC: Seeded Exam Cell Admin (EXX001 / password) ======");
+            }
+
             // Force Subject ID 3 to be held by EMP006
             subjectRepository.findById(3L).ifPresent(subject -> {
                 subject.setEmployeeId("EMP006");
