@@ -2,6 +2,7 @@ package erp_backend.controller;
 
 
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,15 +23,15 @@ public class AuthController {
         System.out.println("AuthController Loaded...");
     }
 
-    // @GetMapping("/test")
-    // public String test() {
-    //     return "API Working";
-    // }
+    @GetMapping("/test")
+    public String test() {
+        return "API Working";
+    }
 
-    // @GetMapping("/home")
-    // public String home() {
-    //     return "hello world";
-    // }
+    @GetMapping("/home")
+    public String home() {
+        return "hello world";
+    }
 
     
 
