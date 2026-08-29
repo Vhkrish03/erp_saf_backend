@@ -223,14 +223,12 @@ public class SemesterResultsController {
             List<String> yearVariants = getYearVariants(year);
             authorized = assignments.stream().anyMatch(a -> a.getDepartment().equalsIgnoreCase(department) &&
                     yearVariants.stream().anyMatch(y -> y.equalsIgnoreCase(a.getYear())) &&
-                    a.getSection().equalsIgnoreCase(section) &&
-                    a.getAcademicYear().equalsIgnoreCase(academicYear));
+                    a.getSection().equalsIgnoreCase(section));
         } else if (semester != null && !semester.isBlank()) {
             String romanSem = mapSemesterToRoman(semester);
             authorized = assignments.stream().anyMatch(a -> a.getDepartment().equalsIgnoreCase(department) &&
                     mapSemesterToRoman(a.getSemester()).equalsIgnoreCase(romanSem) &&
-                    a.getSection().equalsIgnoreCase(section) &&
-                    a.getAcademicYear().equalsIgnoreCase(academicYear));
+                    a.getSection().equalsIgnoreCase(section));
         }
 
         if (!authorized) {
@@ -268,12 +266,7 @@ public class SemesterResultsController {
 
             final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
-            if (rOpt.isEmpty()) {
-                rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
-                        .findFirst();
-            }
+                    .findByStudentIdAndSemesterName(s.getId(), semName);
 
             if (rOpt.isPresent()) {
                 Map<String, Object> map = new HashMap<>();
@@ -358,12 +351,7 @@ public class SemesterResultsController {
 
             final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
-            if (rOpt.isEmpty()) {
-                rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
-                        .findFirst();
-            }
+                    .findByStudentIdAndSemesterName(s.getId(), semName);
 
             if (rOpt.isPresent()) {
                 Map<String, Object> map = new HashMap<>();
@@ -469,12 +457,7 @@ public class SemesterResultsController {
 
             final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
-            if (rOpt.isEmpty()) {
-                rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
-                        .findFirst();
-            }
+                    .findByStudentIdAndSemesterName(s.getId(), semName);
 
             if (rOpt.isPresent()) {
                 ExamCellResult r = rOpt.get();
