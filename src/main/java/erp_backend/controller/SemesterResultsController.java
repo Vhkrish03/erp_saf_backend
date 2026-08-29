@@ -200,21 +200,31 @@ public class SemesterResultsController {
     public ResponseEntity<?> getTeacherStudentsResults(
             @RequestParam String teacherId,
             @RequestParam String academicYear,
-            @RequestParam String semester,
+            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) String year,
             @RequestParam String department,
             @RequestParam String section) {
 
         // Validate teacher assignment
         List<FacultySubjectAssignment> assignments = facultySubjectAssignmentRepository
                 .findByTeacherEmployeeId(teacherId);
-        String romanSem = mapSemesterToRoman(semester);
-        boolean authorized = assignments.stream().anyMatch(a -> a.getDepartment().equalsIgnoreCase(department) &&
-                mapSemesterToRoman(a.getSemester()).equalsIgnoreCase(romanSem) &&
-                a.getSection().equalsIgnoreCase(section) &&
-                a.getAcademicYear().equalsIgnoreCase(academicYear));
+
+        boolean authorized = false;
+        if (year != null && !year.isBlank()) {
+            List<String> yearVariants = getYearVariants(year);
+            authorized = assignments.stream().anyMatch(a -> a.getDepartment().equalsIgnoreCase(department) &&
+                    yearVariants.stream().anyMatch(y -> y.equalsIgnoreCase(a.getYear())) &&
+                    a.getSection().equalsIgnoreCase(section) &&
+                    a.getAcademicYear().equalsIgnoreCase(academicYear));
+        } else if (semester != null && !semester.isBlank()) {
+            String romanSem = mapSemesterToRoman(semester);
+            authorized = assignments.stream().anyMatch(a -> a.getDepartment().equalsIgnoreCase(department) &&
+                    mapSemesterToRoman(a.getSemester()).equalsIgnoreCase(romanSem) &&
+                    a.getSection().equalsIgnoreCase(section) &&
+                    a.getAcademicYear().equalsIgnoreCase(academicYear));
+        }
 
         if (!authorized) {
-            // Check if teacher is generally registered to make this friendly
             Teacher t = teacherRepository.findByEmployeeId(teacherId).orElse(null);
             if (t == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Teacher not found."));
@@ -222,15 +232,33 @@ public class SemesterResultsController {
         }
 
         // Fetch students in this class
-        List<Student> students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+        List<Student> students;
+        if (year != null && !year.isBlank()) {
+            students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
+                    section);
+        } else {
+            String romanSem = mapSemesterToRoman(semester);
+            students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+        }
+
         List<Map<String, Object>> response = new ArrayList<>();
 
         for (Student s : students) {
+            String studentSem = s.getSemester();
+            if (studentSem == null || studentSem.isBlank()) {
+                if (semester != null && !semester.isBlank()) {
+                    studentSem = mapSemesterToRoman(semester);
+                } else if (year != null && !year.isBlank()) {
+                    studentSem = guessSemesterFromYear(year);
+                }
+            }
+
+            final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semester, academicYear);
+                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
             if (rOpt.isEmpty()) {
                 rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semester))
+                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
                         .findFirst();
             }
 
@@ -240,6 +268,7 @@ public class SemesterResultsController {
             map.put("rollNumber", s.getRollNumber());
             map.put("section", s.getSection());
             map.put("department", s.getDepartment());
+            map.put("semester", semName);
 
             if (rOpt.isPresent()) {
                 ExamCellResult r = rOpt.get();
@@ -277,7 +306,8 @@ public class SemesterResultsController {
     public ResponseEntity<?> getHodStudentsResults(
             @RequestParam String hodId,
             @RequestParam String academicYear,
-            @RequestParam String semester,
+            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) String year,
             @RequestParam String department,
             @RequestParam(required = false) String section,
             @RequestParam(required = false) String resultStatus) {
@@ -288,21 +318,40 @@ public class SemesterResultsController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Unauthorized HOD access."));
         }
 
-        String romanSem = mapSemesterToRoman(semester);
         List<Student> students;
-        if (section != null && !section.isBlank()) {
-            students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+        if (year != null && !year.isBlank()) {
+            if (section != null && !section.isBlank()) {
+                students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
+                        section);
+            } else {
+                students = studentRepository.findByDepartmentAndYearIn(department, getYearVariants(year));
+            }
         } else {
-            students = studentRepository.findByDepartmentAndSemester(department, romanSem);
+            String romanSem = mapSemesterToRoman(semester);
+            if (section != null && !section.isBlank()) {
+                students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+            } else {
+                students = studentRepository.findByDepartmentAndSemester(department, romanSem);
+            }
         }
 
         List<Map<String, Object>> response = new ArrayList<>();
         for (Student s : students) {
+            String studentSem = s.getSemester();
+            if (studentSem == null || studentSem.isBlank()) {
+                if (semester != null && !semester.isBlank()) {
+                    studentSem = mapSemesterToRoman(semester);
+                } else if (year != null && !year.isBlank()) {
+                    studentSem = guessSemesterFromYear(year);
+                }
+            }
+
+            final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semester, academicYear);
+                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
             if (rOpt.isEmpty()) {
                 rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semester))
+                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
                         .findFirst();
             }
 
@@ -312,6 +361,7 @@ public class SemesterResultsController {
             map.put("rollNumber", s.getRollNumber());
             map.put("section", s.getSection());
             map.put("department", s.getDepartment());
+            map.put("semester", semName);
             map.put("cgpa", s.getCgpa());
 
             String resStatus = "PENDING";
@@ -354,7 +404,8 @@ public class SemesterResultsController {
     public ResponseEntity<?> getHodStatistics(
             @RequestParam String hodId,
             @RequestParam String academicYear,
-            @RequestParam String semester,
+            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) String year,
             @RequestParam String department,
             @RequestParam(required = false) String section) {
 
@@ -364,12 +415,21 @@ public class SemesterResultsController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Unauthorized HOD access."));
         }
 
-        String romanSem = mapSemesterToRoman(semester);
         List<Student> students;
-        if (section != null && !section.isBlank()) {
-            students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+        if (year != null && !year.isBlank()) {
+            if (section != null && !section.isBlank()) {
+                students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
+                        section);
+            } else {
+                students = studentRepository.findByDepartmentAndYearIn(department, getYearVariants(year));
+            }
         } else {
-            students = studentRepository.findByDepartmentAndSemester(department, romanSem);
+            String romanSem = mapSemesterToRoman(semester);
+            if (section != null && !section.isBlank()) {
+                students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
+            } else {
+                students = studentRepository.findByDepartmentAndSemester(department, romanSem);
+            }
         }
 
         int totalStudents = students.size();
@@ -385,11 +445,21 @@ public class SemesterResultsController {
         Map<String, SubjectPerformance> subjectPerfMap = new LinkedHashMap<>();
 
         for (Student s : students) {
+            String studentSem = s.getSemester();
+            if (studentSem == null || studentSem.isBlank()) {
+                if (semester != null && !semester.isBlank()) {
+                    studentSem = mapSemesterToRoman(semester);
+                } else if (year != null && !year.isBlank()) {
+                    studentSem = guessSemesterFromYear(year);
+                }
+            }
+
+            final String semName = studentSem;
             Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semester, academicYear);
+                    .findByStudentIdAndSemesterNameAndAcademicYear(s.getId(), semName, academicYear);
             if (rOpt.isEmpty()) {
                 rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
-                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semester))
+                        .filter(r -> r.getSemesterName().equalsIgnoreCase(semName))
                         .findFirst();
             }
 
@@ -465,6 +535,50 @@ public class SemesterResultsController {
         stats.put("subjectPerformance", subjectPerfList);
 
         return ResponseEntity.ok(stats);
+    }
+
+    private String guessSemesterFromYear(String year) {
+        if (year == null)
+            return "I";
+        String clean = year.trim().toUpperCase();
+        if (clean.contains("2") || clean.startsWith("II"))
+            return "III";
+        if (clean.contains("3") || clean.startsWith("III"))
+            return "V";
+        if (clean.contains("4") || clean.startsWith("IV"))
+            return "VII";
+        return "I";
+    }
+
+    private List<String> getYearVariants(String year) {
+        if (year == null || year.isBlank()) {
+            return java.util.Collections.emptyList();
+        }
+        String clean = year.trim().toUpperCase();
+        switch (clean) {
+            case "I":
+            case "1":
+            case "1ST":
+            case "1ST YEAR":
+                return java.util.Arrays.asList("I", "1", "1st year", "1st");
+            case "II":
+            case "2":
+            case "2ND":
+            case "2ND YEAR":
+                return java.util.Arrays.asList("II", "2", "2nd year", "2nd");
+            case "III":
+            case "3":
+            case "3RD":
+            case "3RD YEAR":
+                return java.util.Arrays.asList("III", "3", "3rd year", "3rd");
+            case "IV":
+            case "4":
+            case "4TH":
+            case "4TH YEAR":
+                return java.util.Arrays.asList("IV", "4", "4th year", "4th");
+            default:
+                return java.util.Arrays.asList(year, clean);
+        }
     }
 
     // ── Internal Helpers ──────────────────────────────────────────────────────
