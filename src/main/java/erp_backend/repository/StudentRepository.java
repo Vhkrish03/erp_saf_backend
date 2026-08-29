@@ -51,4 +51,15 @@ public interface StudentRepository extends JpaRepository<Student, String> {
                         @Param("department") String department,
                         @Param("years") List<String> years,
                         @Param("section") String section);
+
+        @Query("SELECT s FROM Student s WHERE s.department = :department AND s.semester IN :semesters")
+        List<Student> findByDepartmentAndSemesterIn(
+                        @Param("department") String department,
+                        @Param("semesters") List<String> semesters);
+
+        @Query("SELECT s FROM Student s WHERE s.department = :department AND s.semester IN :semesters AND s.section = :section")
+        List<Student> findByDepartmentAndSemesterInAndSection(
+                        @Param("department") String department,
+                        @Param("semesters") List<String> semesters,
+                        @Param("section") String section);
 }

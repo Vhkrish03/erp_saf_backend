@@ -243,6 +243,10 @@ public class SemesterResultsController {
         if (year != null && !year.isBlank()) {
             students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
                     section);
+            if (students.isEmpty()) {
+                students = studentRepository.findByDepartmentAndSemesterInAndSection(department,
+                        getSemestersForYear(year), section);
+            }
         } else {
             String romanSem = mapSemesterToRoman(semester);
             students = studentRepository.findByDepartmentAndSemesterAndSection(department, romanSem, section);
@@ -322,8 +326,15 @@ public class SemesterResultsController {
             if (section != null && !section.isBlank()) {
                 students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
                         section);
+                if (students.isEmpty()) {
+                    students = studentRepository.findByDepartmentAndSemesterInAndSection(department,
+                            getSemestersForYear(year), section);
+                }
             } else {
                 students = studentRepository.findByDepartmentAndYearIn(department, getYearVariants(year));
+                if (students.isEmpty()) {
+                    students = studentRepository.findByDepartmentAndSemesterIn(department, getSemestersForYear(year));
+                }
             }
         } else {
             String romanSem = mapSemesterToRoman(semester);
@@ -417,8 +428,15 @@ public class SemesterResultsController {
             if (section != null && !section.isBlank()) {
                 students = studentRepository.findByDepartmentAndYearInAndSection(department, getYearVariants(year),
                         section);
+                if (students.isEmpty()) {
+                    students = studentRepository.findByDepartmentAndSemesterInAndSection(department,
+                            getSemestersForYear(year), section);
+                }
             } else {
                 students = studentRepository.findByDepartmentAndYearIn(department, getYearVariants(year));
+                if (students.isEmpty()) {
+                    students = studentRepository.findByDepartmentAndSemesterIn(department, getSemestersForYear(year));
+                }
             }
         } else {
             String romanSem = mapSemesterToRoman(semester);
@@ -544,6 +562,26 @@ public class SemesterResultsController {
         if (clean.contains("4") || clean.startsWith("IV"))
             return "VII";
         return "I";
+    }
+
+    private List<String> getSemestersForYear(String year) {
+        if (year == null || year.isBlank()) {
+            return java.util.Collections.emptyList();
+        }
+        String clean = year.trim().toUpperCase();
+        if (clean.contains("4") || clean.startsWith("IV")) {
+            return java.util.Arrays.asList("VII", "VIII");
+        }
+        if (clean.contains("3") || clean.startsWith("III")) {
+            return java.util.Arrays.asList("V", "VI");
+        }
+        if (clean.contains("2") || clean.startsWith("II")) {
+            return java.util.Arrays.asList("III", "IV");
+        }
+        if (clean.contains("1") || clean.startsWith("I")) {
+            return java.util.Arrays.asList("I", "II");
+        }
+        return java.util.Collections.emptyList();
     }
 
     private List<String> getYearVariants(String year) {
