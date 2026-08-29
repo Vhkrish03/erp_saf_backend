@@ -275,15 +275,15 @@ public class SemesterResultsController {
                         .findFirst();
             }
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("studentId", s.getId());
-            map.put("studentName", s.getName());
-            map.put("rollNumber", s.getRollNumber());
-            map.put("section", s.getSection());
-            map.put("department", s.getDepartment());
-            map.put("semester", semName);
-
             if (rOpt.isPresent()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("studentId", s.getId());
+                map.put("studentName", s.getName());
+                map.put("rollNumber", s.getRollNumber());
+                map.put("section", s.getSection());
+                map.put("department", s.getDepartment());
+                map.put("semester", semName);
+
                 ExamCellResult r = rOpt.get();
                 map.put("resultId", r.getId());
                 map.put("sgpa", r.getSgpa());
@@ -291,15 +291,8 @@ public class SemesterResultsController {
                 map.put("status", r.getStatus());
                 map.put("resultStatus", hasFailedSubjects(r) ? "FAIL" : "PASS");
                 map.put("backlogs", countBacklogs(r));
-            } else {
-                map.put("resultId", null);
-                map.put("sgpa", 0.0);
-                map.put("cgpa", s.getCgpa());
-                map.put("status", "NOT_PUBLISHED");
-                map.put("resultStatus", "PENDING");
-                map.put("backlogs", 0);
+                response.add(map);
             }
-            response.add(map);
         }
 
         return ResponseEntity.ok(response);
@@ -372,21 +365,21 @@ public class SemesterResultsController {
                         .findFirst();
             }
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("studentId", s.getId());
-            map.put("studentName", s.getName());
-            map.put("rollNumber", s.getRollNumber());
-            map.put("section", s.getSection());
-            map.put("department", s.getDepartment());
-            map.put("semester", semName);
-            map.put("cgpa", s.getCgpa());
-
-            String resStatus = "PENDING";
-            int arrears = 0;
-            double sgpa = 0.0;
-            String publicationStatus = "NOT_PUBLISHED";
-
             if (rOpt.isPresent()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("studentId", s.getId());
+                map.put("studentName", s.getName());
+                map.put("rollNumber", s.getRollNumber());
+                map.put("section", s.getSection());
+                map.put("department", s.getDepartment());
+                map.put("semester", semName);
+                map.put("cgpa", s.getCgpa());
+
+                String resStatus = "PENDING";
+                int arrears = 0;
+                double sgpa = 0.0;
+                String publicationStatus = "NOT_PUBLISHED";
+
                 ExamCellResult r = rOpt.get();
                 sgpa = r.getSgpa();
                 publicationStatus = r.getStatus();
@@ -394,15 +387,14 @@ public class SemesterResultsController {
                 resStatus = arrears > 0 ? "FAIL" : "PASS";
 
                 map.put("resultId", r.getId());
-            }
+                map.put("sgpa", sgpa);
+                map.put("status", publicationStatus); // DRAFT, VERIFIED, APPROVED, PUBLISHED
+                map.put("resultStatus", resStatus); // PASS, FAIL, PENDING
+                map.put("backlogs", arrears);
 
-            map.put("sgpa", sgpa);
-            map.put("status", publicationStatus); // DRAFT, VERIFIED, APPROVED, PUBLISHED
-            map.put("resultStatus", resStatus); // PASS, FAIL, PENDING
-            map.put("backlogs", arrears);
-
-            if (resultStatus == null || resultStatus.isBlank() || resultStatus.equalsIgnoreCase(resStatus)) {
-                response.add(map);
+                if (resultStatus == null || resultStatus.isBlank() || resultStatus.equalsIgnoreCase(resStatus)) {
+                    response.add(map);
+                }
             }
         }
 
