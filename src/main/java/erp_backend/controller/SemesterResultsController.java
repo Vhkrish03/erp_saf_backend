@@ -269,8 +269,13 @@ public class SemesterResultsController {
             }
 
             final String semName = studentSem;
-            Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterName(s.getId(), semName);
+            final String targetSemStr = mapSemesterToRoman(semName);
+            final String rawSemParam = semester;
+            Optional<ExamCellResult> rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
+                    .filter(r -> r.getSemesterName().equalsIgnoreCase(semName) ||
+                            (rawSemParam != null && r.getSemesterName().equalsIgnoreCase(rawSemParam)) ||
+                            mapSemesterToRoman(r.getSemesterName()).equalsIgnoreCase(targetSemStr))
+                    .findFirst();
 
             if (rOpt.isPresent()) {
                 Map<String, Object> map = new HashMap<>();
@@ -361,8 +366,13 @@ public class SemesterResultsController {
             }
 
             final String semName = studentSem;
-            Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterName(s.getId(), semName);
+            final String targetSemStr = mapSemesterToRoman(semName);
+            final String rawSemParam = semester;
+            Optional<ExamCellResult> rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
+                    .filter(r -> r.getSemesterName().equalsIgnoreCase(semName) ||
+                            (rawSemParam != null && r.getSemesterName().equalsIgnoreCase(rawSemParam)) ||
+                            mapSemesterToRoman(r.getSemesterName()).equalsIgnoreCase(targetSemStr))
+                    .findFirst();
 
             if (rOpt.isPresent()) {
                 Map<String, Object> map = new HashMap<>();
@@ -474,8 +484,13 @@ public class SemesterResultsController {
             }
 
             final String semName = studentSem;
-            Optional<ExamCellResult> rOpt = examCellResultRepository
-                    .findByStudentIdAndSemesterName(s.getId(), semName);
+            final String targetSemStr = mapSemesterToRoman(semName);
+            final String rawSemParam = semester;
+            Optional<ExamCellResult> rOpt = examCellResultRepository.findByStudentId(s.getId()).stream()
+                    .filter(r -> r.getSemesterName().equalsIgnoreCase(semName) ||
+                            (rawSemParam != null && r.getSemesterName().equalsIgnoreCase(rawSemParam)) ||
+                            mapSemesterToRoman(r.getSemesterName()).equalsIgnoreCase(targetSemStr))
+                    .findFirst();
 
             if (rOpt.isPresent()) {
                 ExamCellResult r = rOpt.get();
