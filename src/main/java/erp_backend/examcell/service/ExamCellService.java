@@ -43,7 +43,8 @@ public class ExamCellService {
 
     @Transactional
     public ExamCellResult saveOrUpdateResult(ExamCellResult incoming, String performedBy, String role) {
-        // Reject if trying to overwrite a PUBLISHED result directly
+        // Reject if trying to overwrite a PUBLISHED result directly, unless incoming is
+        // also PUBLISHED
         Optional<ExamCellResult> existing = resultRepository
                 .findByStudentIdAndSemesterNameAndAcademicYear(
                         incoming.getStudentId(), incoming.getSemesterName(), incoming.getAcademicYear());
@@ -53,7 +54,8 @@ public class ExamCellService {
 
         if (existing.isPresent()) {
             result = existing.get();
-            if ("PUBLISHED".equalsIgnoreCase(result.getStatus())) {
+            if ("PUBLISHED".equalsIgnoreCase(result.getStatus())
+                    && !"PUBLISHED".equalsIgnoreCase(incoming.getStatus())) {
                 throw new IllegalStateException(
                         "Result is already PUBLISHED. Cannot overwrite published official results.");
             }
@@ -65,6 +67,9 @@ public class ExamCellService {
             result.setExamination(incoming.getExamination());
             result.setSgpa(incoming.getSgpa());
             result.setDepartment(incoming.getDepartment());
+            if (incoming.getStatus() != null && !incoming.getStatus().isBlank()) {
+                result.setStatus(incoming.getStatus());
+            }
 
             // Replace subjects
             if (result.getSubjects() != null)
@@ -83,7 +88,9 @@ public class ExamCellService {
                             "Student not found: " + incoming.getStudentId()));
 
             result = incoming;
-            result.setStatus("DRAFT");
+            if (incoming.getStatus() == null || incoming.getStatus().isBlank()) {
+                result.setStatus("DRAFT");
+            }
             previousStatus = null;
 
             // Populate student name if not provided
@@ -94,6 +101,11 @@ public class ExamCellService {
             }
         }
         result.setEnteredBy(performedBy);
+
+        if ("PUBLISHED".equalsIgnoreCase(result.getStatus())) {
+            result.setPublishedBy(performedBy);
+            result.setPublishedAt(LocalDateTime.now());
+        }
 
         ExamCellResult saved = resultRepository.save(result);
         // Link subjects back
@@ -111,6 +123,16 @@ public class ExamCellService {
                 performedBy, role, null));
 
         return saved;
+    }
+
+    @Transactional
+    public List<ExamCellResult> saveOrUpdateResultBulk(List<ExamCellResult> incomingList, String performedBy,
+            String role) {
+        List<ExamCellResult> savedList = new java.util.ArrayList<>();
+        for (ExamCellResult incoming : incomingList) {
+            savedList.add(saveOrUpdateResult(incoming, performedBy, role));
+        }
+        return savedList;
     }
 
     // ── Workflow State Transitions ────────────────────────────────────────────

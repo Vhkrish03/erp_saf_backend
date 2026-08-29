@@ -56,6 +56,27 @@ public class ExamCellController {
         }
     }
 
+    /**
+     * POST /api/exam-cell/results/bulk?performedBy=EMP001&role=EXAM_CELL
+     * Bulk save student exam results.
+     */
+    @PostMapping("/results/bulk")
+    public ResponseEntity<?> saveResultBulk(
+            @RequestBody List<ExamCellResult> results,
+            @RequestParam String performedBy,
+            @RequestParam(defaultValue = "EXAM_CELL") String role) {
+        try {
+            return ResponseEntity.ok(examCellService.saveOrUpdateResultBulk(results, performedBy, role));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unexpected error: " + e.getMessage()));
+        }
+    }
+
     // ── Workflow Transitions ──────────────────────────────────────────────────
 
     /**
