@@ -141,6 +141,8 @@ public class ProgressCardService {
                                 department, semester, section, "WEEKLY");
                 List<Assessment> iatAll = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
                                 department, semester, section, "IAT");
+                List<Assessment> modelAll = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
+                                department, semester, section, "MODEL");
 
                 return students.stream().map(student -> {
                         Map<String, Object> row = new LinkedHashMap<>();
@@ -154,14 +156,24 @@ public class ProgressCardService {
                         row.put("internalMarks", internalMarks);
 
                         long weeklyFinalized = weeklyAll.stream()
-                                        .filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus())).count();
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
+                                        .count();
                         long iatFinalized = iatAll.stream()
-                                        .filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus())).count();
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
+                                        .count();
+                        long modelFinalized = modelAll.stream()
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
+                                        .count();
 
                         row.put("weeklyTestCount", weeklyAll.size());
                         row.put("weeklyFinalized", weeklyFinalized);
                         row.put("iatCount", iatAll.size());
                         row.put("iatFinalized", iatFinalized);
+                        row.put("modelCount", modelAll.size());
+                        row.put("modelFinalized", modelFinalized);
 
                         Optional<ExamCellResult> res = examCellResultRepository.findPublishedByStudentIdAndSemester(
                                         student.getId(), semester);
@@ -216,7 +228,8 @@ public class ProgressCardService {
                                                 student.getDepartment(), semester, student.getSection(), "WEEKLY",
                                                 academicYear)
                                 .stream()
-                                .filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus()))
+                                .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                .contains(a.getStatus().toUpperCase()))
                                 .filter(a -> a.getSubject() != null &&
                                                 a.getSubject().getId().equals(subjectId))
                                 .collect(Collectors.toList());
@@ -305,17 +318,25 @@ public class ProgressCardService {
                                 dept, semester, section, "WEEKLY"));
                 all.addAll(assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
                                 dept, semester, section, "IAT"));
+                all.addAll(assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
+                                dept, semester, section, "MODEL"));
 
                 long total = all.size();
                 long submitted = all.stream().filter(a -> !"DRAFT".equalsIgnoreCase(a.getStatus())).count();
                 long inchargeVerified = all.stream()
-                                .filter(a -> List.of("INCHARGE_VERIFIED", "HOD_APPROVED", "DEAN_SUBMITTED")
-                                                .contains(a.getStatus()))
+                                .filter(a -> List
+                                                .of("CLASS_INCHARGE_VERIFIED", "HOD_VERIFIED", "DEAN_APPROVED",
+                                                                "PUBLISHED")
+                                                .contains(a.getStatus().toUpperCase()))
                                 .count();
                 long hodApproved = all.stream()
-                                .filter(a -> List.of("HOD_APPROVED", "DEAN_SUBMITTED").contains(a.getStatus())).count();
+                                .filter(a -> List.of("HOD_VERIFIED", "DEAN_APPROVED", "PUBLISHED")
+                                                .contains(a.getStatus().toUpperCase()))
+                                .count();
                 long deanFinalized = all.stream()
-                                .filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus())).count();
+                                .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                .contains(a.getStatus().toUpperCase()))
+                                .count();
 
                 String overallStatus;
                 if (total == 0)
@@ -375,17 +396,29 @@ public class ProgressCardService {
 
                 List<Assessment> weeklyList;
                 List<Assessment> iatList;
+                List<Assessment> modelList;
 
                 if (finalizedOnly) {
                         weeklyList = assessmentRepository
                                         .findByDepartmentAndSemesterAndSectionAndTypeAndAcademicYear(
                                                         dept, semester, section, "WEEKLY", academicYear)
-                                        .stream().filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus()))
+                                        .stream()
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
                                         .collect(Collectors.toList());
                         iatList = assessmentRepository
                                         .findByDepartmentAndSemesterAndSectionAndTypeAndAcademicYear(
                                                         dept, semester, section, "IAT", academicYear)
-                                        .stream().filter(a -> "DEAN_SUBMITTED".equalsIgnoreCase(a.getStatus()))
+                                        .stream()
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
+                                        .collect(Collectors.toList());
+                        modelList = assessmentRepository
+                                        .findByDepartmentAndSemesterAndSectionAndTypeAndAcademicYear(
+                                                        dept, semester, section, "MODEL", academicYear)
+                                        .stream()
+                                        .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
+                                                        .contains(a.getStatus().toUpperCase()))
                                         .collect(Collectors.toList());
                 } else {
                         weeklyList = assessmentRepository
@@ -393,6 +426,8 @@ public class ProgressCardService {
                                                         "WEEKLY");
                         iatList = assessmentRepository
                                         .findByDepartmentAndSemesterAndSectionAndType(dept, semester, section, "IAT");
+                        modelList = assessmentRepository
+                                        .findByDepartmentAndSemesterAndSectionAndType(dept, semester, section, "MODEL");
                 }
 
                 Set<Subject> subjects = new LinkedHashSet<>();
@@ -401,6 +436,10 @@ public class ProgressCardService {
                                 subjects.add(a.getSubject());
                 });
                 iatList.forEach(a -> {
+                        if (a.getSubject() != null)
+                                subjects.add(a.getSubject());
+                });
+                modelList.forEach(a -> {
                         if (a.getSubject() != null)
                                 subjects.add(a.getSubject());
                 });
@@ -419,14 +458,15 @@ public class ProgressCardService {
 
                 List<Map<String, Object>> result = new ArrayList<>();
                 for (Subject sub : subjects) {
-                        result.add(buildSubjectInternalMap(sid, sub, weeklyList, iatList, semester, academicYear));
+                        result.add(buildSubjectInternalMap(sid, sub, weeklyList, iatList, modelList, semester,
+                                        academicYear));
                 }
                 return result;
         }
 
         private Map<String, Object> buildSubjectInternalMap(
                         String studentId, Subject subject,
-                        List<Assessment> weeklyList, List<Assessment> iatList,
+                        List<Assessment> weeklyList, List<Assessment> iatList, List<Assessment> modelList,
                         String semester, String academicYear) {
 
                 Map<String, Object> m = new LinkedHashMap<>();
@@ -451,6 +491,25 @@ public class ProgressCardService {
                 }
                 m.put("dailyTests", dtMarks);
                 m.put("weeklyTestStatus", weeklyStatus);
+
+                // Model exams
+                Map<String, Object> modelMarks = new LinkedHashMap<>();
+                for (int i = 1; i <= 2; i++)
+                        modelMarks.put("Model Exam " + i, null);
+                String modelStatus = "DRAFT";
+                for (Assessment model : modelList) {
+                        if (model.getSubject() != null &&
+                                        model.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
+                                List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(
+                                                model.getId(),
+                                                studentId);
+                                if (!marks.isEmpty())
+                                        modelMarks.put(model.getName().trim(), marks.get(0).getMarksObtained());
+                                modelStatus = model.getStatus();
+                        }
+                }
+                m.put("modelExams", modelMarks);
+                m.put("modelStatus", modelStatus);
 
                 // IAT marks
                 Map<String, Object> iat1Map = defaultIatMap();

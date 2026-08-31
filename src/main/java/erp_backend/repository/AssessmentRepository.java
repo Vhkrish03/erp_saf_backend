@@ -45,8 +45,8 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
         @Query("SELECT a FROM Assessment a WHERE a.department = :dept AND a.status = 'INCHARGE_VERIFIED'")
         List<Assessment> findVerifiedByInchargeForDepartment(@Param("dept") String dept);
 
-        /** Dean pending: HOD_APPROVED */
-        @Query("SELECT a FROM Assessment a WHERE a.status = 'HOD_APPROVED'")
+        /** Dean pending: HOD_VERIFIED */
+        @Query("SELECT a FROM Assessment a WHERE a.status = 'HOD_VERIFIED'")
         List<Assessment> findHodApprovedForDean();
 
         List<Assessment> findByDepartmentAndSemesterAndSectionAndTypeAndAcademicYear(

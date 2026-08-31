@@ -47,6 +47,14 @@ public class AssessmentController {
         return ResponseEntity.ok(assessmentService.getIatAssessments(department, semester, section));
     }
 
+    @GetMapping("/model")
+    public ResponseEntity<List<Assessment>> getModelAssessments(
+            @RequestParam String department,
+            @RequestParam String semester,
+            @RequestParam String section) {
+        return ResponseEntity.ok(assessmentService.getModelAssessments(department, semester, section));
+    }
+
     @GetMapping("/faculty/{facultyId}")
     public ResponseEntity<List<Assessment>> getAssessmentsByFaculty(@PathVariable String facultyId) {
         return ResponseEntity.ok(assessmentService.getAssessmentsByFaculty(facultyId));

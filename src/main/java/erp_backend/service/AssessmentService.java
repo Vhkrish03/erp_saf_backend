@@ -61,6 +61,12 @@ public class AssessmentService {
         return assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester, section, "IAT");
     }
 
+    // Fetch MODEL assessments match section
+    public List<Assessment> getModelAssessments(String department, String semester, String section) {
+        return assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester, section,
+                "MODEL");
+    }
+
     public List<Assessment> getAssessmentsByFaculty(String facultyId) {
         return assessmentRepository.findByFacultyId(facultyId);
     }
@@ -325,6 +331,8 @@ public class AssessmentService {
                 semester, section, "WEEKLY");
         List<Assessment> iatList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
                 semester, section, "IAT");
+        List<Assessment> modelList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
+                semester, section, "MODEL");
 
         Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> studentReports = new ArrayList<>();
@@ -337,6 +345,11 @@ public class AssessmentService {
             }
         }
         for (Assessment asm : iatList) {
+            if (asm.getSubject() != null) {
+                subjects.add(asm.getSubject());
+            }
+        }
+        for (Assessment asm : modelList) {
             if (asm.getSubject() != null) {
                 subjects.add(asm.getSubject());
             }
@@ -420,6 +433,20 @@ public class AssessmentService {
                 subMap.put("iat1Internal", iat1Weighted);
                 subMap.put("iat2Internal", iat2Weighted);
 
+                // 3. Get Model Exam marks
+                Map<String, Double> modelMarks = new HashMap<>();
+                for (Assessment model : modelList) {
+                    if (model.getSubject() != null
+                            && model.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
+                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(model.getId(),
+                                student.getId());
+                        if (!marks.isEmpty()) {
+                            modelMarks.put(model.getName().trim(), marks.get(0).getMarksObtained());
+                        }
+                    }
+                }
+                subMap.put("modelExams", modelMarks);
+
                 double consolidated = 0.0;
                 if (iat1Found && iat2Found) {
                     consolidated = (iat1Weighted + iat2Weighted) / 2.0;
@@ -460,10 +487,13 @@ public class AssessmentService {
                 semester, section, "WEEKLY");
         List<Assessment> iat = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
                 section, "IAT");
+        List<Assessment> model = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
+                section, "MODEL");
 
         List<Assessment> all = new ArrayList<>();
         all.addAll(weekly);
         all.addAll(iat);
+        all.addAll(model);
 
         if (all.isEmpty()) {
             return;
