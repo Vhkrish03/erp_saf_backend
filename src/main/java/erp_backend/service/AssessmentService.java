@@ -164,7 +164,8 @@ public class AssessmentService {
             throw new IllegalStateException("Only assigned faculty can input marks.");
         }
 
-        if ("DEAN_SUBMITTED".equalsIgnoreCase(assessment.getStatus())) {
+        if ("DEAN_APPROVED".equalsIgnoreCase(assessment.getStatus())
+                || "PUBLISHED".equalsIgnoreCase(assessment.getStatus())) {
             throw new IllegalStateException("Assessment is locked. Cannot edit marks.");
         }
 
@@ -236,7 +237,7 @@ public class AssessmentService {
                 .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
 
         if (checkSuccess) {
-            assessment.setStatus("INCHARGE_VERIFIED");
+            assessment.setStatus("CLASS_INCHARGE_VERIFIED");
             workflow.setClassInchargeStatus("VERIFIED");
             workflow.setVerifiedAt(LocalDateTime.now());
         } else {
@@ -259,8 +260,8 @@ public class AssessmentService {
                 .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
 
         if (approve) {
-            assessment.setStatus("HOD_APPROVED");
-            workflow.setHodStatus("APPROVED");
+            assessment.setStatus("HOD_VERIFIED");
+            workflow.setHodStatus("VERIFIED");
             workflow.setApprovedAt(LocalDateTime.now());
         } else {
             assessment.setStatus("DRAFT");
@@ -282,8 +283,29 @@ public class AssessmentService {
         AssessmentWorkflow workflow = workflowRepository.findByAssessmentId(assessmentId)
                 .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
 
-        assessment.setStatus("DEAN_SUBMITTED");
-        workflow.setDeanStatus("LOCKED");
+        assessment.setStatus("DEAN_APPROVED");
+        workflow.setDeanStatus("APPROVED");
+        workflow.setLockedAt(LocalDateTime.now());
+
+        workflowRepository.save(workflow);
+        return assessmentRepository.save(assessment);
+    }
+
+    // Publish / Release Assessment to Progress Card
+    @Transactional
+    public Assessment publishAssessment(Long assessmentId) {
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Assessment not found."));
+
+        AssessmentWorkflow workflow = workflowRepository.findByAssessmentId(assessmentId)
+                .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
+
+        if (!"DEAN_APPROVED".equalsIgnoreCase(assessment.getStatus())) {
+            throw new IllegalStateException("Only DEAN_APPROVED assessments can be published.");
+        }
+
+        assessment.setStatus("PUBLISHED");
+        workflow.setDeanStatus("PUBLISHED");
         workflow.setLockedAt(LocalDateTime.now());
 
         workflowRepository.save(workflow);
