@@ -108,9 +108,10 @@ public class AssessmentController {
     @PostMapping("/{assessmentId}/verify/class-incharge")
     public ResponseEntity<Assessment> verifyClassIncharge(
             @PathVariable Long assessmentId,
-            @RequestParam boolean accept) {
+            @RequestParam boolean accept,
+            @RequestParam(required = false) String comment) {
         try {
-            return ResponseEntity.ok(assessmentService.verifyClassIncharge(assessmentId, accept));
+            return ResponseEntity.ok(assessmentService.verifyClassIncharge(assessmentId, accept, comment));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

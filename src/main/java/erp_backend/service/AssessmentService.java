@@ -235,7 +235,7 @@ public class AssessmentService {
 
     // Verify by Class Incharge
     @Transactional
-    public Assessment verifyClassIncharge(Long assessmentId, boolean checkSuccess) {
+    public Assessment verifyClassIncharge(Long assessmentId, boolean checkSuccess, String comment) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Assessment not found."));
 
@@ -251,6 +251,7 @@ public class AssessmentService {
             assessment.setStatus("DRAFT");
             workflow.setFacultyStatus("DRAFT");
             workflow.setClassInchargeStatus("REOPENED");
+            workflow.setInchargeComments(comment);
         }
         workflowRepository.save(workflow);
         return assessmentRepository.save(assessment);

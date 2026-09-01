@@ -23,6 +23,9 @@ public class AssessmentWorkflow {
     @Column(name = "class_incharge_status")
     private String classInchargeStatus; // PENDING, VERIFIED, REOPENED
 
+    @Column(name = "incharge_comments")
+    private String inchargeComments;
+
     @Column(name = "hod_status")
     private String hodStatus; // PENDING, APPROVED, REJECTED
 
@@ -133,5 +136,13 @@ public class AssessmentWorkflow {
 
     public void setLockedAt(LocalDateTime lockedAt) {
         this.lockedAt = lockedAt;
+    }
+
+    public String getInchargeComments() {
+        return inchargeComments;
+    }
+
+    public void setInchargeComments(String inchargeComments) {
+        this.inchargeComments = inchargeComments;
     }
 }
