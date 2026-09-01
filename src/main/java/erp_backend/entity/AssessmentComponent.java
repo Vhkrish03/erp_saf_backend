@@ -24,7 +24,18 @@ public class AssessmentComponent {
 
     private double weightage; // e.g. 0.50, 0.20, 0.15, 0.15
 
+    @Transient
+    private boolean isEntered;
+
     public AssessmentComponent() {
+    }
+
+    public boolean isEntered() {
+        return isEntered;
+    }
+
+    public void setEntered(boolean entered) {
+        isEntered = entered;
     }
 
     public Long getId() {

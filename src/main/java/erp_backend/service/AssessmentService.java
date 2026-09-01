@@ -50,25 +50,50 @@ public class AssessmentService {
         }
     }
 
+    private void populateEnteredComponents(List<Assessment> assessments) {
+        if (assessments.isEmpty())
+            return;
+        List<Long> assessmentIds = assessments.stream().map(Assessment::getId).toList();
+        List<Long> enteredComponentIds = entityManager.createQuery(
+                "SELECT DISTINCT m.component.id FROM AssessmentMark m WHERE m.assessment.id IN :ids", Long.class)
+                .setParameter("ids", assessmentIds)
+                .getResultList();
+        Set<Long> enteredSet = new HashSet<>(enteredComponentIds);
+        for (Assessment a : assessments) {
+            for (AssessmentComponent c : a.getComponents()) {
+                c.setEntered(enteredSet.contains(c.getId()));
+            }
+        }
+    }
+
     // Fetch weekly tests match section
     public List<Assessment> getWeeklyAssessments(String department, String semester, String section) {
-        return assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester, section,
-                "WEEKLY");
+        List<Assessment> res = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
+                section, "WEEKLY");
+        populateEnteredComponents(res);
+        return res;
     }
 
     // Fetch IAT assessments match section
     public List<Assessment> getIatAssessments(String department, String semester, String section) {
-        return assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester, section, "IAT");
+        List<Assessment> res = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
+                section, "IAT");
+        populateEnteredComponents(res);
+        return res;
     }
 
     // Fetch MODEL assessments match section
     public List<Assessment> getModelAssessments(String department, String semester, String section) {
-        return assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester, section,
-                "MODEL");
+        List<Assessment> res = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department, semester,
+                section, "MODEL");
+        populateEnteredComponents(res);
+        return res;
     }
 
     public List<Assessment> getAssessmentsByFaculty(String facultyId) {
-        return assessmentRepository.findByFacultyId(facultyId);
+        List<Assessment> res = assessmentRepository.findByFacultyId(facultyId);
+        populateEnteredComponents(res);
+        return res;
     }
 
     public Optional<Assessment> getAssessmentById(Long id) {
