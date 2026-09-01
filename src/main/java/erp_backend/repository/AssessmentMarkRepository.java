@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface AssessmentMarkRepository extends JpaRepository<AssessmentMark, Long> {
     List<AssessmentMark> findByAssessmentId(Long assessmentId);
 
+    List<AssessmentMark> findByAssessmentIdIn(java.util.Collection<Long> assessmentIds);
+
     List<AssessmentMark> findByAssessmentIdAndStudentId(Long assessmentId, String studentId);
 
     List<AssessmentMark> findByStudentId(String studentId);

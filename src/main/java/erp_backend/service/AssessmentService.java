@@ -360,6 +360,26 @@ public class AssessmentService {
         List<Assessment> modelList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
                 semester, section, "MODEL");
 
+        // Fast batch lookup for marks
+        List<Long> allAssessmentIds = new ArrayList<>();
+        weeklyList.forEach(a -> allAssessmentIds.add(a.getId()));
+        iatList.forEach(a -> allAssessmentIds.add(a.getId()));
+        modelList.forEach(a -> allAssessmentIds.add(a.getId()));
+
+        List<AssessmentMark> allMarks = new ArrayList<>();
+        if (!allAssessmentIds.isEmpty()) {
+            allMarks = markRepository.findByAssessmentIdIn(allAssessmentIds);
+        }
+
+        Map<String, Map<Long, List<AssessmentMark>>> studentMarksMap = new HashMap<>();
+        for (AssessmentMark m : allMarks) {
+            String stuId = m.getStudent().getId();
+            Long asmId = m.getAssessment().getId();
+            studentMarksMap.computeIfAbsent(stuId, k -> new HashMap<>())
+                    .computeIfAbsent(asmId, k -> new ArrayList<>())
+                    .add(m);
+        }
+
         Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> studentReports = new ArrayList<>();
 
@@ -402,8 +422,9 @@ public class AssessmentService {
                 for (Assessment weekly : weeklyList) {
                     if (weekly.getSubject() != null
                             && weekly.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
-                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(weekly.getId(),
-                                student.getId());
+                        List<AssessmentMark> marks = studentMarksMap
+                                .getOrDefault(student.getId(), Collections.emptyMap())
+                                .getOrDefault(weekly.getId(), Collections.emptyList());
                         if (!marks.isEmpty()) {
                             dtMarks.put(weekly.getName().trim(), marks.get(0).getMarksObtained());
                         }
@@ -429,8 +450,9 @@ public class AssessmentService {
                         if (!isIat1 && !isIat2)
                             continue;
 
-                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(iat.getId(),
-                                student.getId());
+                        List<AssessmentMark> marks = studentMarksMap
+                                .getOrDefault(student.getId(), Collections.emptyMap())
+                                .getOrDefault(iat.getId(), Collections.emptyList());
                         double weightedSum = 0.0;
                         Map<String, Double> compMap = new HashMap<>();
 
@@ -464,8 +486,9 @@ public class AssessmentService {
                 for (Assessment model : modelList) {
                     if (model.getSubject() != null
                             && model.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
-                        List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(model.getId(),
-                                student.getId());
+                        List<AssessmentMark> marks = studentMarksMap
+                                .getOrDefault(student.getId(), Collections.emptyMap())
+                                .getOrDefault(model.getId(), Collections.emptyList());
                         if (!marks.isEmpty()) {
                             modelMarks.put(model.getName().trim(), marks.get(0).getMarksObtained());
                         }
