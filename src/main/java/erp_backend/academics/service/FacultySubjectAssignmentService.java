@@ -4,6 +4,8 @@ import erp_backend.Teacher.entity.Teacher;
 import erp_backend.Teacher.repository.TeacherRepository;
 import erp_backend.entity.Subject;
 import erp_backend.repository.SubjectRepository;
+import erp_backend.academics.entity.AssignmentAuditLog;
+import erp_backend.academics.repository.AssignmentAuditLogRepository;
 import erp_backend.academics.entity.FacultySubjectAssignment;
 import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class FacultySubjectAssignmentService {
 
     @Autowired
     private TeacherRepository teacherRepository;
+
+    @Autowired
+    private AssignmentAuditLogRepository auditLogRepository;
 
     public List<FacultySubjectAssignment> getAll() {
         return repository.findAll();
@@ -73,7 +78,14 @@ public class FacultySubjectAssignmentService {
         assignment.setSection(section);
         assignment.setAcademicYear(academicYear);
 
-        return repository.save(assignment);
+        assignment = repository.save(assignment);
+
+        auditLogRepository.save(new AssignmentAuditLog("ASSIGN_SUBJECT", employeeId,
+                String.format("Assigned Subject: %s (%s) for Class: %s Year %s Sem %s Sec %s Session %s",
+                        subject.getName(), subject.getCode(), department, year, semester, section, academicYear),
+                "ADMIN"));
+
+        return assignment;
     }
 
     @Transactional
@@ -96,11 +108,29 @@ public class FacultySubjectAssignmentService {
         assignment.setSection(section);
         assignment.setAcademicYear(academicYear);
 
-        return repository.save(assignment);
+        assignment = repository.save(assignment);
+
+        auditLogRepository.save(new AssignmentAuditLog("UPDATE_SUBJECT_ASSIGNMENT", employeeId,
+                String.format(
+                        "Updated Assignment ID %d to Subject: %s (%s) for Class: %s Year %s Sem %s Sec %s Session %s",
+                        id, subject.getName(), subject.getCode(), department, year, semester, section,
+                        academicYear),
+                "ADMIN"));
+
+        return assignment;
     }
 
     @Transactional
     public void delete(Long id) {
-        repository.deleteById(id);
+        repository.findById(id).ifPresent(assignment -> {
+            repository.delete(assignment);
+            auditLogRepository
+                    .save(new AssignmentAuditLog("REMOVE_SUBJECT_ASSIGNMENT", assignment.getTeacher().getEmployeeId(),
+                            String.format("Removed Subject: %s (%s) for Class: %s Year %s Sem %s Sec %s Session %s",
+                                    assignment.getSubject().getName(), assignment.getSubject().getCode(),
+                                    assignment.getDepartment(), assignment.getYear(), assignment.getSemester(),
+                                    assignment.getSection(), assignment.getAcademicYear()),
+                            "ADMIN"));
+        });
     }
 }

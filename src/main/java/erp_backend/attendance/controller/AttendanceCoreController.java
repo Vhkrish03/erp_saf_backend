@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import erp_backend.academics.entity.FacultySubjectAssignment;
+import erp_backend.attendance.entity.AttendanceDelegation;
+
 import erp_backend.attendance.dto.AttendanceSaveRequest;
 import erp_backend.attendance.entity.AttendanceRecord;
 import erp_backend.attendance.entity.AttendanceSession;
@@ -38,6 +41,21 @@ public class AttendanceCoreController {
             return ResponseEntity.ok(session);
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/teacher/{employeeId}/assignments")
+    public ResponseEntity<?> getTeacherAssignments(@PathVariable String employeeId) {
+        try {
+            List<FacultySubjectAssignment> assignments = coreService.getTeacherAssignments(employeeId);
+            List<AttendanceDelegation> delegations = coreService.getTeacherDelegations(employeeId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("assignments", assignments);
+            response.put("delegations", delegations);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
         }

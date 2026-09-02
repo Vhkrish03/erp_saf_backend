@@ -2,7 +2,6 @@ package erp_backend.attendance.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +19,11 @@ import erp_backend.attendance.repository.AttendanceSessionRepository;
 import erp_backend.entity.Student;
 import erp_backend.repository.StudentRepository;
 
+import erp_backend.academics.entity.FacultySubjectAssignment;
+import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
+import erp_backend.attendance.entity.AttendanceDelegation;
+import erp_backend.attendance.repository.AttendanceDelegationRepository;
+
 @Service
 public class AttendanceCoreService {
 
@@ -28,18 +32,24 @@ public class AttendanceCoreService {
     private final AttendanceAuditLogRepository auditRepo;
     private final TeacherRepository teacherRepo;
     private final StudentRepository studentRepo;
+    private final FacultySubjectAssignmentRepository assignmentRepo;
+    private final AttendanceDelegationRepository delegationRepo;
 
     public AttendanceCoreService(
             AttendanceSessionRepository sessionRepo,
             AttendanceRecordRepository recordRepo,
             AttendanceAuditLogRepository auditRepo,
             TeacherRepository teacherRepo,
-            StudentRepository studentRepo) {
+            StudentRepository studentRepo,
+            FacultySubjectAssignmentRepository assignmentRepo,
+            AttendanceDelegationRepository delegationRepo) {
         this.sessionRepo = sessionRepo;
         this.recordRepo = recordRepo;
         this.auditRepo = auditRepo;
         this.teacherRepo = teacherRepo;
         this.studentRepo = studentRepo;
+        this.assignmentRepo = assignmentRepo;
+        this.delegationRepo = delegationRepo;
     }
 
     @Transactional
@@ -160,5 +170,17 @@ public class AttendanceCoreService {
 
     public List<AttendanceRecord> getStudentAttendance(String studentId) {
         return recordRepo.findByStudentId(studentId);
+    }
+
+    public List<FacultySubjectAssignment> getTeacherAssignments(String employeeId) {
+        return assignmentRepo.findByTeacherEmployeeId(employeeId);
+    }
+
+    public List<AttendanceDelegation> getTeacherDelegations(String employeeId) {
+        Teacher teacher = teacherRepo.findByEmployeeId(employeeId).orElse(null);
+        if (teacher == null) {
+            return List.of();
+        }
+        return delegationRepo.findByAssignedToIdAndStatus(teacher.getId(), "ACCEPTED"); // Or whatever valid statuses
     }
 }
