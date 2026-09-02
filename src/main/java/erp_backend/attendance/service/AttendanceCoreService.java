@@ -21,6 +21,8 @@ import erp_backend.repository.StudentRepository;
 
 import erp_backend.academics.entity.FacultySubjectAssignment;
 import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
+import erp_backend.academics.entity.ClassInchargeAssignment;
+import erp_backend.academics.repository.ClassInchargeAssignmentRepository;
 import erp_backend.attendance.entity.AttendanceDelegation;
 import erp_backend.attendance.repository.AttendanceDelegationRepository;
 
@@ -34,6 +36,7 @@ public class AttendanceCoreService {
     private final StudentRepository studentRepo;
     private final FacultySubjectAssignmentRepository assignmentRepo;
     private final AttendanceDelegationRepository delegationRepo;
+    private final ClassInchargeAssignmentRepository inchargeRepo;
 
     public AttendanceCoreService(
             AttendanceSessionRepository sessionRepo,
@@ -42,7 +45,8 @@ public class AttendanceCoreService {
             TeacherRepository teacherRepo,
             StudentRepository studentRepo,
             FacultySubjectAssignmentRepository assignmentRepo,
-            AttendanceDelegationRepository delegationRepo) {
+            AttendanceDelegationRepository delegationRepo,
+            ClassInchargeAssignmentRepository inchargeRepo) {
         this.sessionRepo = sessionRepo;
         this.recordRepo = recordRepo;
         this.auditRepo = auditRepo;
@@ -50,6 +54,7 @@ public class AttendanceCoreService {
         this.studentRepo = studentRepo;
         this.assignmentRepo = assignmentRepo;
         this.delegationRepo = delegationRepo;
+        this.inchargeRepo = inchargeRepo;
     }
 
     @Transactional
@@ -182,5 +187,11 @@ public class AttendanceCoreService {
             return List.of();
         }
         return delegationRepo.findByAssignedToIdAndStatus(teacher.getId(), "ACCEPTED"); // Or whatever valid statuses
+    }
+
+    public List<ClassInchargeAssignment> getTeacherInchargeAssignments(String employeeId) {
+        return inchargeRepo.findByTeacher_EmployeeIdOrderByCreatedAtDesc(employeeId).stream()
+                .filter(ClassInchargeAssignment::isActive)
+                .toList();
     }
 }

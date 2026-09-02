@@ -51,10 +51,13 @@ public class AttendanceCoreController {
         try {
             List<FacultySubjectAssignment> assignments = coreService.getTeacherAssignments(employeeId);
             List<AttendanceDelegation> delegations = coreService.getTeacherDelegations(employeeId);
+            List<erp_backend.academics.entity.ClassInchargeAssignment> incharges = coreService
+                    .getTeacherInchargeAssignments(employeeId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("assignments", assignments);
             response.put("delegations", delegations);
+            response.put("incharges", incharges);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
