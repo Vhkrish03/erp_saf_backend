@@ -145,9 +145,18 @@ public class AdminService {
         jdbcTemplate.update("DELETE FROM library_books WHERE student_id = ?", id);
         jdbcTemplate.update("DELETE FROM attendance_record WHERE student_id = ?", id);
 
+        jdbcTemplate.update(
+                "DELETE FROM exam_cell_result_subjects WHERE exam_cell_result_id IN (SELECT id FROM exam_cell_results WHERE student_id = ?)",
+                id);
         jdbcTemplate.update("DELETE FROM exam_cell_results WHERE student_id = ?", id);
+
         jdbcTemplate.update("DELETE FROM exam_cell_result_audits WHERE student_id = ?", id);
+
+        jdbcTemplate.update(
+                "DELETE FROM exam_results WHERE semester_result_id IN (SELECT id FROM semester_results WHERE student_id = ?)",
+                id);
         jdbcTemplate.update("DELETE FROM semester_results WHERE student_id = ?", id);
+
         jdbcTemplate.update("DELETE FROM semester_result_audits WHERE student_id = ?", id);
 
         jdbcTemplate.update("DELETE FROM progress_cards WHERE student_id = ?", id);
