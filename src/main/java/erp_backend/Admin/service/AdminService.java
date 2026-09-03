@@ -154,7 +154,8 @@ public class AdminService {
         jdbcTemplate.update("DELETE FROM internal_marks WHERE student_id = ?", id);
         jdbcTemplate.update("DELETE FROM performance_remarks WHERE student_id = ?", id);
 
-        jdbcTemplate.update("DELETE FROM bus_passes WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM bus_passes WHERE person_id = ? AND person_type = 'STUDENT'", id);
+        jdbcTemplate.update("DELETE FROM id_cards WHERE person_id = ? AND person_type = 'STUDENT'", id);
         jdbcTemplate.update("DELETE FROM assignment_submissions WHERE student_id = ?", id);
 
         userRepository.deleteByReferenceIdAndRole(id, "STUDENT");
