@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import erp_backend.entity.User;
 import erp_backend.entity.Student;
@@ -26,17 +27,20 @@ public class AdminService {
     private final TeacherRepository teacherRepository;
     private final HodRepository hodRepository;
     private final ExamCellAdminRepository examCellAdminRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public AdminService(UserRepository userRepository,
             StudentRepository studentRepository,
             TeacherRepository teacherRepository,
             HodRepository hodRepository,
-            ExamCellAdminRepository examCellAdminRepository) {
+            ExamCellAdminRepository examCellAdminRepository,
+            JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
         this.hodRepository = hodRepository;
         this.examCellAdminRepository = examCellAdminRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     // ==========================================
@@ -132,6 +136,20 @@ public class AdminService {
     public void deleteStudent(String id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found."));
+
+        // Natively delete all Foreign Keys to avoid Hibernate cascade conflicts
+        jdbcTemplate.update("DELETE FROM student_transport_assignments WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM fee_payments WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM student_fees WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM assessment_marks WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM library_books WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM attendance_record WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM semester_results WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM progress_cards WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM internal_marks WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM bus_passes WHERE student_id = ?", id);
+        jdbcTemplate.update("DELETE FROM assignment_submissions WHERE student_id = ?", id);
+
         userRepository.deleteByReferenceIdAndRole(id, "STUDENT");
         studentRepository.delete(student);
     }
