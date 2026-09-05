@@ -31,6 +31,7 @@ public class Notice {
     private String department;   // e.g., ALL, CSE, ECE
     private String purpose;
     private String fileUrl;
+    private String status = "APPROVED"; // PENDING_HOD, PENDING_ADMIN, APPROVED, REJECTED
 
     public Notice() {
     }
@@ -77,6 +78,10 @@ public class Notice {
         return fileUrl;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     // Setters
 
     public void setId(Long id) {
@@ -117,5 +122,9 @@ public class Notice {
 
     public void setFileUrl(String fileUrl) {
         this.fileUrl = fileUrl;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

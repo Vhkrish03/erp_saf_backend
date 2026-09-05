@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
@@ -82,5 +84,14 @@ public class NoticeController {
 
         Notice saved = service.createNotice(notice);
         return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveNotice(@PathVariable Long id, @RequestParam String role) {
+        Notice notice = service.approveNotice(id, role);
+        if (notice == null) {
+            return ResponseEntity.badRequest().body("Failed to approve notice.");
+        }
+        return ResponseEntity.ok(notice);
     }
 }
