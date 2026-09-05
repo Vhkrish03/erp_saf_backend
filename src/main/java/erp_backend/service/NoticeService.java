@@ -22,7 +22,10 @@ public class NoticeService {
         String upperRole = role.toUpperCase();
         
         return all.stream().filter(n -> {
-            boolean isDeptMatch = department == null || n.getDepartment().equalsIgnoreCase("ALL") || n.getDepartment().equalsIgnoreCase(department);
+            String noticeDept = n.getDepartment() == null ? "ALL" : n.getDepartment();
+            String noticeStatus = n.getStatus() == null ? "APPROVED" : n.getStatus();
+            
+            boolean isDeptMatch = department == null || noticeDept.equalsIgnoreCase("ALL") || noticeDept.equalsIgnoreCase(department);
             
             if (upperRole.equals("ADMIN") || upperRole.equals("SUPER_ADMIN") || upperRole.equals("DEAN")) {
                 return true; 
@@ -30,7 +33,7 @@ public class NoticeService {
             if (upperRole.equals("HOD") || upperRole.equals("TEACHER") || upperRole.equals("FACULTY")) {
                 return isDeptMatch; 
             }
-            return isDeptMatch && "APPROVED".equals(n.getStatus());
+            return isDeptMatch && "APPROVED".equals(noticeStatus);
         }).toList();
     }
 
