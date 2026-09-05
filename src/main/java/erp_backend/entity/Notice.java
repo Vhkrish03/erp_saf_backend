@@ -27,6 +27,11 @@ public class Notice {
     @Column(name = "is_important")
     private boolean isImportant;
 
+    private String uploaderRole; // e.g., ADMIN, HOD, TEACHER
+    private String department;   // e.g., ALL, CSE, ECE
+    private String purpose;
+    private String fileUrl;
+
     public Notice() {
     }
 
@@ -56,6 +61,22 @@ public class Notice {
         return isImportant;
     }
 
+    public String getUploaderRole() {
+        return uploaderRole;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
+    }
+
     // Setters
 
     public void setId(Long id) {
@@ -80,5 +101,21 @@ public class Notice {
 
     public void setImportant(boolean isImportant) {
         this.isImportant = isImportant;
+    }
+
+    public void setUploaderRole(String uploaderRole) {
+        this.uploaderRole = uploaderRole;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 }

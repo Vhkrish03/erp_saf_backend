@@ -16,7 +16,22 @@ public class NoticeService {
         this.repository = repository;
     }
 
-    public List<Notice> getAllNotices() {
-        return repository.findAll();
+    public List<Notice> getNotices(String role, String department) {
+        if (role == null) return repository.findAllByOrderByIdDesc();
+        
+        String upperRole = role.toUpperCase();
+        if (upperRole.equals("ADMIN") || upperRole.equals("SUPER_ADMIN") || upperRole.equals("DEAN")) {
+            return repository.findAllByOrderByIdDesc();
+        }
+        
+        if (department == null || department.trim().isEmpty()) {
+            return repository.findAllByOrderByIdDesc();
+        }
+        
+        return repository.findByDepartmentOrDepartmentOrderByIdDesc(department, "ALL");
+    }
+
+    public Notice createNotice(Notice notice) {
+        return repository.save(notice);
     }
 }
