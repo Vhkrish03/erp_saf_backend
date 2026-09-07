@@ -186,6 +186,10 @@ public class AdminService {
         return studentRepository.findAll();
     }
 
+    public Optional<User> getUserByReferenceIdAndRole(String id, String role) {
+        return userRepository.findByReferenceIdAndRole(id, role);
+    }
+
     public Student getStudent(String id) {
         return studentRepository.findById(id).orElse(null);
     }
