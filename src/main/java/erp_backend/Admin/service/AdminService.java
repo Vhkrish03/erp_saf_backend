@@ -74,7 +74,7 @@ public class AdminService {
     }
 
     @Transactional
-    public Student updateStudent(String id, Student details) {
+    public Student updateStudent(String id, Student details, String newPassword) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found."));
 
@@ -99,6 +99,17 @@ public class AdminService {
             if (optUser.isPresent()) {
                 User user = optUser.get();
                 user.setFullName(details.getName());
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(user);
+            }
+        }
+
+        // Update password if provided
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            Optional<User> optUser = userRepository.findByReferenceIdAndRole(id, "STUDENT");
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                user.setPassword(newPassword.trim());
                 user.setUpdatedAt(LocalDateTime.now());
                 userRepository.save(user);
             }

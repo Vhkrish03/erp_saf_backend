@@ -100,9 +100,46 @@ public class AdminController {
     }
 
     @PutMapping("/students/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable String id, @RequestBody Student studentDetails) {
+    public ResponseEntity<?> updateStudent(@PathVariable String id, @RequestBody Map<String, Object> payload) {
         try {
-            Student updated = adminService.updateStudent(id, studentDetails);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> studentMap = (Map<String, Object>) payload.get("student");
+            String password = (String) payload.get("password");
+
+            if (studentMap == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Missing student data"));
+            }
+
+            Student studentDetails = new Student();
+            studentDetails.setId((String) studentMap.get("id"));
+            studentDetails.setName((String) studentMap.get("name"));
+            studentDetails.setRollNumber((String) studentMap.get("rollNumber"));
+            studentDetails.setDepartment((String) studentMap.get("department"));
+            studentDetails.setSection((String) studentMap.get("section"));
+            studentDetails.setYear(studentMap.get("year") != null ? studentMap.get("year").toString() : null);
+            studentDetails
+                    .setSemester(studentMap.get("semester") != null ? studentMap.get("semester").toString() : null);
+            studentDetails.setEmail((String) studentMap.get("email"));
+            studentDetails.setPhone((String) studentMap.get("phone"));
+            studentDetails.setBloodGroup((String) studentMap.get("bloodGroup"));
+            studentDetails.setDob((String) studentMap.get("dob"));
+            studentDetails.setEmergencyContactName((String) studentMap.get("emergencyContactName"));
+            studentDetails.setEmergencyContactPhone((String) studentMap.get("emergencyContactPhone"));
+            studentDetails.setAddress((String) studentMap.get("address"));
+            studentDetails.setAdvisor((String) studentMap.get("advisor"));
+            studentDetails.setCgpa(
+                    studentMap.get("cgpa") != null ? Double.parseDouble(studentMap.get("cgpa").toString()) : 0.0);
+            studentDetails.setResidencyType(
+                    studentMap.get("residencyType") != null ? (String) studentMap.get("residencyType") : "DAY_SCHOLAR");
+            studentDetails.setTransportRequired(
+                    studentMap.get("transportRequired") != null ? (Boolean) studentMap.get("transportRequired")
+                            : false);
+            studentDetails.setTransportStatus(
+                    studentMap.get("transportStatus") != null ? (String) studentMap.get("transportStatus")
+                            : "NOT_ASSIGNED");
+
+            Student updated = adminService.updateStudent(id, studentDetails, password);
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
