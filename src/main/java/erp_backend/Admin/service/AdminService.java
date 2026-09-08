@@ -231,6 +231,10 @@ public class AdminService {
         hod.setEmail(details.getEmail());
         hod.setAddress(details.getAddress());
 
+        if (details.getPassword() != null && !details.getPassword().trim().isEmpty()) {
+            hod.setPassword(details.getPassword().trim());
+        }
+
         return hodRepository.save(hod);
     }
 
@@ -318,6 +322,10 @@ public class AdminService {
         admin.setPhone(details.getPhone());
         admin.setEmail(details.getEmail());
         admin.setAddress(details.getAddress());
+
+        if (details.getPassword() != null && !details.getPassword().trim().isEmpty()) {
+            admin.setPassword(details.getPassword().trim());
+        }
 
         return examCellAdminRepository.save(admin);
     }

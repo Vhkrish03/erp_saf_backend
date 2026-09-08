@@ -348,6 +348,21 @@ public class AdminController {
         return ResponseEntity.ok(hod);
     }
 
+    @GetMapping("/hods/{id}/password")
+    public ResponseEntity<?> getHodPassword(@PathVariable Long id) {
+        try {
+            Hod hod = adminService.getHod(id);
+            if (hod != null) {
+                return ResponseEntity.ok(Map.of("password", hod.getPassword() != null ? hod.getPassword() : ""));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error"));
+        }
+    }
+
     @PutMapping("/hods/{id}")
     public ResponseEntity<?> updateHod(@PathVariable Long id, @RequestBody Hod hodDetails) {
         try {
@@ -428,6 +443,21 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(admin);
+    }
+
+    @GetMapping("/exam-cell-admins/{id}/password")
+    public ResponseEntity<?> getExamCellPassword(@PathVariable Long id) {
+        try {
+            ExamCellAdmin admin = adminService.getExamCellAdmin(id);
+            if (admin != null) {
+                return ResponseEntity.ok(Map.of("password", admin.getPassword() != null ? admin.getPassword() : ""));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error"));
+        }
     }
 
     @PutMapping("/exam-cell-admins/{id}")
