@@ -28,7 +28,12 @@ public class Hod {
     private String designation;
     private String phone;
     private String email;
+
+    @Column(columnDefinition = "TEXT")
     private String address;
+
+    @Column(name = "password")
+    private String password;
 
     public Hod() {
     }
@@ -113,5 +118,13 @@ public class Hod {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

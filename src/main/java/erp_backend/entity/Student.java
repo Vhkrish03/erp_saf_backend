@@ -37,7 +37,12 @@ public class Student {
 
     private String address;
     private String advisor;
+
+    @Column(name = "cgpa")
     private double cgpa;
+
+    @Column(name = "password")
+    private String password;
 
     @Column(name = "residency_type")
     private String residencyType = "DAY_SCHOLAR";
@@ -73,6 +78,14 @@ public class Student {
 
     public void setTransportStatus(String transportStatus) {
         this.transportStatus = transportStatus;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     // Getters

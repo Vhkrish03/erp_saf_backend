@@ -52,25 +52,10 @@ public class AdminService {
         if (studentRepository.existsById(student.getId())) {
             throw new IllegalArgumentException("Student ID " + student.getId() + " already exists.");
         }
-        if (userRepository.existsByEmail(student.getEmail())) {
-            throw new IllegalArgumentException("Email " + student.getEmail() + " is already registered.");
-        }
 
-        // Save Student
-        Student savedStudent = studentRepository.save(student);
-
-        // Save corresponding User account
-        User user = new User();
-        user.setFullName(student.getName());
-        user.setEmail(student.getEmail());
-        user.setPassword(password); // Plain text
-        user.setRole("STUDENT");
-        user.setReferenceId(student.getId());
-        user.setIsActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        return savedStudent;
+        // Save Student directly with password
+        student.setPassword(password);
+        return studentRepository.save(student);
     }
 
     @Transactional
@@ -78,41 +63,9 @@ public class AdminService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found."));
 
-        // If email changed, verify no duplicate
-        if (!student.getEmail().equalsIgnoreCase(details.getEmail())) {
-            if (userRepository.existsByEmail(details.getEmail())) {
-                throw new IllegalArgumentException("Email " + details.getEmail() + " is already registered.");
-            }
-            // Update User email
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(id, "STUDENT");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setEmail(details.getEmail());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
-
-        // Update User name
-        if (!student.getName().equalsIgnoreCase(details.getName())) {
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(id, "STUDENT");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setFullName(details.getName());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
-
         // Update password if provided
         if (newPassword != null && !newPassword.trim().isEmpty()) {
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(id, "STUDENT");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setPassword(newPassword.trim());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
+            student.setPassword(newPassword.trim());
         }
 
         student.setName(details.getName());
@@ -178,7 +131,6 @@ public class AdminService {
         jdbcTemplate.update("DELETE FROM id_cards WHERE person_id = ? AND person_type = 'STUDENT'", id);
         jdbcTemplate.update("DELETE FROM assignment_submissions WHERE student_id = ?", id);
 
-        userRepository.deleteByReferenceIdAndRole(id, "STUDENT");
         studentRepository.delete(student);
     }
 
@@ -203,56 +155,15 @@ public class AdminService {
         if (teacherRepository.existsByEmployeeId(teacher.getEmployeeId())) {
             throw new IllegalArgumentException("Employee ID " + teacher.getEmployeeId() + " already exists.");
         }
-        if (userRepository.existsByEmail(teacher.getEmail())) {
-            throw new IllegalArgumentException("Email " + teacher.getEmail() + " is already registered.");
-        }
 
-        // Save Teacher
-        Teacher savedTeacher = teacherRepository.save(teacher);
-
-        // Save corresponding User
-        User user = new User();
-        user.setFullName(teacher.getName());
-        user.setEmail(teacher.getEmail());
-        user.setPassword(password);
-        user.setRole("FACULTY"); // Uses FACULTY for roles check in login
-        user.setReferenceId(teacher.getEmployeeId());
-        user.setIsActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        return savedTeacher;
+        teacher.setPassword(password);
+        return teacherRepository.save(teacher);
     }
 
     @Transactional
     public Teacher updateTeacher(Long id, Teacher details) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found."));
-
-        // If email changed, check duplicates
-        if (!teacher.getEmail().equalsIgnoreCase(details.getEmail())) {
-            if (userRepository.existsByEmail(details.getEmail())) {
-                throw new IllegalArgumentException("Email " + details.getEmail() + " is already registered.");
-            }
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(teacher.getEmployeeId(), "FACULTY");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setEmail(details.getEmail());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
-
-        // Update User name
-        if (!teacher.getName().equalsIgnoreCase(details.getName())) {
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(teacher.getEmployeeId(), "FACULTY");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setFullName(details.getName());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
 
         teacher.setName(details.getName());
         teacher.setGender(details.getGender());
@@ -277,7 +188,6 @@ public class AdminService {
     public void deleteTeacher(Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found."));
-        userRepository.deleteByReferenceIdAndRole(teacher.getEmployeeId(), "FACULTY");
         teacherRepository.delete(teacher);
     }
 
@@ -298,56 +208,15 @@ public class AdminService {
         if (hodRepository.existsByEmployeeId(hod.getEmployeeId())) {
             throw new IllegalArgumentException("Employee ID " + hod.getEmployeeId() + " already exists.");
         }
-        if (userRepository.existsByEmail(hod.getEmail())) {
-            throw new IllegalArgumentException("Email " + hod.getEmail() + " is already registered.");
-        }
 
-        // Save Hod
-        Hod savedHod = hodRepository.save(hod);
-
-        // Save corresponding User account
-        User user = new User();
-        user.setFullName(hod.getName());
-        user.setEmail(hod.getEmail());
-        user.setPassword(password);
-        user.setRole("HOD");
-        user.setReferenceId(hod.getEmployeeId());
-        user.setIsActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        return savedHod;
+        hod.setPassword(password);
+        return hodRepository.save(hod);
     }
 
     @Transactional
     public Hod updateHod(Long id, Hod details) {
         Hod hod = hodRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("HOD not found."));
-
-        // If email changed, check duplicates
-        if (!hod.getEmail().equalsIgnoreCase(details.getEmail())) {
-            if (userRepository.existsByEmail(details.getEmail())) {
-                throw new IllegalArgumentException("Email " + details.getEmail() + " is already registered.");
-            }
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(hod.getEmployeeId(), "HOD");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setEmail(details.getEmail());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
-
-        // Update User name
-        if (!hod.getName().equalsIgnoreCase(details.getName())) {
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(hod.getEmployeeId(), "HOD");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setFullName(details.getName());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
 
         hod.setName(details.getName());
         hod.setGender(details.getGender());
@@ -365,7 +234,6 @@ public class AdminService {
     public void deleteHod(Long id) {
         Hod hod = hodRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("HOD not found."));
-        userRepository.deleteByReferenceIdAndRole(hod.getEmployeeId(), "HOD");
         hodRepository.delete(hod);
     }
 
@@ -429,56 +297,15 @@ public class AdminService {
         if (examCellAdminRepository.existsByEmployeeId(examCellAdmin.getEmployeeId())) {
             throw new IllegalArgumentException("Employee ID " + examCellAdmin.getEmployeeId() + " already exists.");
         }
-        if (userRepository.existsByEmail(examCellAdmin.getEmail())) {
-            throw new IllegalArgumentException("Email " + examCellAdmin.getEmail() + " is already registered.");
-        }
 
-        // Save Exam Cell Admin
-        ExamCellAdmin savedAdmin = examCellAdminRepository.save(examCellAdmin);
-
-        // Save corresponding User account
-        User user = new User();
-        user.setFullName(examCellAdmin.getName());
-        user.setEmail(examCellAdmin.getEmail());
-        user.setPassword(password);
-        user.setRole("EXAM_CELL");
-        user.setReferenceId(examCellAdmin.getEmployeeId());
-        user.setIsActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        return savedAdmin;
+        examCellAdmin.setPassword(password);
+        return examCellAdminRepository.save(examCellAdmin);
     }
 
     @Transactional
     public ExamCellAdmin updateExamCellAdmin(Long id, ExamCellAdmin details) {
         ExamCellAdmin admin = examCellAdminRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Exam Cell Admin not found."));
-
-        // If email changed, check duplicates
-        if (!admin.getEmail().equalsIgnoreCase(details.getEmail())) {
-            if (userRepository.existsByEmail(details.getEmail())) {
-                throw new IllegalArgumentException("Email " + details.getEmail() + " is already registered.");
-            }
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setEmail(details.getEmail());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
-
-        // Update User name
-        if (!admin.getName().equalsIgnoreCase(details.getName())) {
-            Optional<User> optUser = userRepository.findByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-                user.setFullName(details.getName());
-                user.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(user);
-            }
-        }
 
         admin.setName(details.getName());
         admin.setGender(details.getGender());
@@ -495,7 +322,6 @@ public class AdminService {
     public void deleteExamCellAdmin(Long id) {
         ExamCellAdmin admin = examCellAdminRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Exam Cell Admin not found."));
-        userRepository.deleteByReferenceIdAndRole(admin.getEmployeeId(), "EXAM_CELL");
         examCellAdminRepository.delete(admin);
     }
 

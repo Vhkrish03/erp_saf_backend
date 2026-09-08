@@ -103,9 +103,10 @@ public class AdminController {
     @GetMapping("/students/{id}/password")
     public ResponseEntity<?> getStudentPassword(@PathVariable String id) {
         try {
-            Optional<User> userOpt = adminService.getUserByReferenceIdAndRole(id, "STUDENT");
-            if (userOpt.isPresent()) {
-                return ResponseEntity.ok(Map.of("password", userOpt.get().getPassword()));
+            Student student = adminService.getStudent(id);
+            if (student != null) {
+                return ResponseEntity
+                        .ok(Map.of("password", student.getPassword() != null ? student.getPassword() : ""));
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
             }
