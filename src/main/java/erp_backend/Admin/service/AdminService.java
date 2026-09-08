@@ -181,6 +181,10 @@ public class AdminService {
         teacher.setEmergencyContactName(details.getEmergencyContactName());
         teacher.setEmergencyContactNumber(details.getEmergencyContactNumber());
 
+        if (details.getPassword() != null && !details.getPassword().trim().isEmpty()) {
+            teacher.setPassword(details.getPassword().trim());
+        }
+
         return teacherRepository.save(teacher);
     }
 
