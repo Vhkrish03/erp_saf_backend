@@ -249,6 +249,22 @@ public class AdminController {
         return ResponseEntity.ok(teacher);
     }
 
+    @GetMapping("/teachers/{id}/password")
+    public ResponseEntity<?> getTeacherPassword(@PathVariable Long id) {
+        try {
+            Teacher teacher = adminService.getTeacher(id);
+            if (teacher != null) {
+                return ResponseEntity
+                        .ok(Map.of("password", teacher.getPassword() != null ? teacher.getPassword() : ""));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error"));
+        }
+    }
+
     @PutMapping("/teachers/{id}")
     public ResponseEntity<?> updateTeacher(@PathVariable Long id, @RequestBody Teacher teacherDetails) {
         try {
