@@ -112,7 +112,7 @@ public class AuthService {
         } else if (role.equals("EXAM_CELL")) {
             Optional<ExamCellAdmin> opt = examCellAdminRepository.findByEmployeeId(loginId);
             if (opt.isEmpty())
-                return fail("No account found for the provided Employee ID.");
+                return fail("No account found for the provided Exam Cell ID.");
             ExamCellAdmin e = opt.get();
             if (e.getPassword() == null || !e.getPassword().equals(password))
                 return fail("Incorrect password. Please try again.");
