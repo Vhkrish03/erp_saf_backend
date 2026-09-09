@@ -191,7 +191,13 @@ public class ExamCellService {
     @Transactional
     public ExamCellResult publishResult(Long resultId, String performedBy, String role) {
         ExamCellResult result = getResultOrThrow(resultId);
-        validateTransition(result.getStatus(), "APPROVED", "PUBLISHED");
+
+        String cur = result.getStatus();
+        if (!"APPROVED".equalsIgnoreCase(cur) && !"VERIFIED".equalsIgnoreCase(cur) && !"DRAFT".equalsIgnoreCase(cur)) {
+            throw new IllegalStateException(String.format(
+                    "Cannot transition to PUBLISHED from %s. Expected current status: DRAFT, VERIFIED, or APPROVED.",
+                    cur));
+        }
 
         String oldStatus = result.getStatus();
         result.setStatus("PUBLISHED");
