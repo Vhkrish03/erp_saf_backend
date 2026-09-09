@@ -1,4 +1,4 @@
-package erp_backend.entity;
+package erp_backend.notice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,7 +28,7 @@ public class Notice {
     private boolean isImportant;
 
     private String uploaderRole; // e.g., ADMIN, HOD, TEACHER
-    private String department;   // e.g., ALL, CSE, ECE
+    private String department; // e.g., ALL, CSE, ECE
     private String purpose;
     private String fileUrl;
     private String status = "APPROVED"; // PENDING_HOD, PENDING_ADMIN, APPROVED, REJECTED

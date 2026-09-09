@@ -1,4 +1,4 @@
-package erp_backend.controller;
+package erp_backend.notice.controller;
 
 import java.util.List;
 
@@ -21,8 +21,8 @@ import java.time.format.DateTimeFormatter;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import erp_backend.entity.Notice;
-import erp_backend.service.NoticeService;
+import erp_backend.notice.entity.Notice;
+import erp_backend.notice.service.NoticeService;
 
 @RestController
 @RequestMapping("/api/notices")
@@ -51,8 +51,7 @@ public class NoticeController {
             @RequestParam(value = "department", defaultValue = "ALL") String department,
             @RequestParam(value = "uploaderRole", defaultValue = "ADMIN") String uploaderRole,
             @RequestParam(value = "isImportant", defaultValue = "false") boolean isImportant,
-            @RequestParam(value = "file", required = false) MultipartFile file
-    ) {
+            @RequestParam(value = "file", required = false) MultipartFile file) {
         Notice notice = new Notice();
         notice.setTitle(title);
         notice.setDescription(description);
@@ -71,11 +70,13 @@ public class NoticeController {
                     directory.mkdirs();
                 }
                 String originalName = file.getOriginalFilename();
-                String ext = originalName != null && originalName.contains(".") ? originalName.substring(originalName.lastIndexOf(".")) : "";
+                String ext = originalName != null && originalName.contains(".")
+                        ? originalName.substring(originalName.lastIndexOf("."))
+                        : "";
                 String fileName = UUID.randomUUID().toString() + ext;
                 Path filePath = Paths.get(uploadsDir + fileName);
                 Files.copy(file.getInputStream(), filePath);
-                // Assume the app serves /uploads/** 
+                // Assume the app serves /uploads/**
                 notice.setFileUrl("/uploads/" + fileName);
             } catch (IOException e) {
                 return ResponseEntity.internalServerError().body("Failed to upload file");

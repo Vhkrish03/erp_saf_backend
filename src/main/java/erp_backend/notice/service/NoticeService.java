@@ -1,11 +1,11 @@
-package erp_backend.service;
+package erp_backend.notice.service;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import erp_backend.entity.Notice;
-import erp_backend.repository.NoticeRepository;
+import erp_backend.notice.entity.Notice;
+import erp_backend.notice.repository.NoticeRepository;
 
 @Service
 public class NoticeService {
@@ -18,20 +18,22 @@ public class NoticeService {
 
     public List<Notice> getNotices(String role, String department) {
         List<Notice> all = repository.findAllByOrderByIdDesc();
-        if (role == null) return all;
+        if (role == null)
+            return all;
         String upperRole = role.toUpperCase();
-        
+
         return all.stream().filter(n -> {
             String noticeDept = n.getDepartment() == null ? "ALL" : n.getDepartment();
             String noticeStatus = n.getStatus() == null ? "APPROVED" : n.getStatus();
-            
-            boolean isDeptMatch = department == null || noticeDept.equalsIgnoreCase("ALL") || noticeDept.equalsIgnoreCase(department);
-            
+
+            boolean isDeptMatch = department == null || noticeDept.equalsIgnoreCase("ALL")
+                    || noticeDept.equalsIgnoreCase(department);
+
             if (upperRole.equals("ADMIN") || upperRole.equals("SUPER_ADMIN") || upperRole.equals("DEAN")) {
-                return true; 
+                return true;
             }
             if (upperRole.equals("HOD") || upperRole.equals("TEACHER") || upperRole.equals("FACULTY")) {
-                return isDeptMatch; 
+                return isDeptMatch;
             }
             return isDeptMatch && "APPROVED".equals(noticeStatus);
         }).toList();
@@ -51,9 +53,10 @@ public class NoticeService {
 
     public Notice approveNotice(Long id, String role) {
         Notice notice = repository.findById(id).orElse(null);
-        if (notice == null) return null;
+        if (notice == null)
+            return null;
         String upper = role.toUpperCase();
-        
+
         if ("HOD".equals(upper) && "PENDING_HOD".equals(notice.getStatus())) {
             notice.setStatus("PENDING_ADMIN");
             return repository.save(notice);
