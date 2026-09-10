@@ -555,13 +555,16 @@ public class AssessmentService {
 
                 for (Assessment iat : iatList) {
                     if (iat.getSubject() != null && iat.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
-                        boolean isIat1 = iat.getName().equalsIgnoreCase("IAT 1")
-                                || iat.getName().equalsIgnoreCase("IAT-1");
-                        boolean isIat2 = iat.getName().equalsIgnoreCase("IAT 2")
-                                || iat.getName().equalsIgnoreCase("IAT-2");
+                        String lowerName = iat.getName().toLowerCase();
+                        boolean isIat1 = lowerName.contains("1") || lowerName.contains("one");
+                        boolean isIat2 = lowerName.contains("2") || lowerName.contains("two");
 
-                        if (!isIat1 && !isIat2)
-                            continue;
+                        if (!isIat1 && !isIat2) {
+                            if (!iat1Found)
+                                isIat1 = true;
+                            else
+                                isIat2 = true;
+                        }
 
                         List<AssessmentMark> marks = studentMarksMap
                                 .getOrDefault(student.getId(), Collections.emptyMap())
@@ -596,6 +599,7 @@ public class AssessmentService {
 
                 // 3. Get Model Exam marks
                 Map<String, Double> modelMarks = new HashMap<>();
+                int fallbackModelIndex = 1;
                 for (Assessment model : modelList) {
                     if (model.getSubject() != null
                             && model.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
@@ -603,7 +607,12 @@ public class AssessmentService {
                                 .getOrDefault(student.getId(), Collections.emptyMap())
                                 .getOrDefault(model.getId(), Collections.emptyList());
                         if (!marks.isEmpty()) {
-                            modelMarks.put(model.getName().trim(), marks.get(0).getMarksObtained());
+                            String n = model.getName().trim().replaceAll("[^0-9]", "");
+                            String assignedKey = !n.isEmpty() ? "Model " + n : "Model " + fallbackModelIndex;
+                            modelMarks.put(assignedKey, marks.get(0).getMarksObtained());
+                            if (n.isEmpty()) {
+                                fallbackModelIndex++;
+                            }
                         }
                     }
                 }
