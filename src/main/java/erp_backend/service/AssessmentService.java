@@ -104,8 +104,60 @@ public class AssessmentService {
     public List<Student> getStudentsForAssessment(Long assessmentId) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Assessment not found."));
-        return studentRepository.findByDepartmentAndSemesterAndSection(
-                assessment.getDepartment(), assessment.getSemester(), assessment.getSection());
+
+        String sem = assessment.getSemester() != null ? assessment.getSemester().trim().toUpperCase() : "";
+        List<String> semList = new ArrayList<>();
+        List<String> yearList = new ArrayList<>();
+
+        switch (sem) {
+            case "1":
+            case "I":
+                semList.addAll(Arrays.asList("1", "I"));
+                yearList.addAll(Arrays.asList("1", "I", "1st"));
+                break;
+            case "2":
+            case "II":
+                semList.addAll(Arrays.asList("2", "II"));
+                yearList.addAll(Arrays.asList("1", "I", "1st"));
+                break;
+            case "3":
+            case "III":
+                semList.addAll(Arrays.asList("3", "III"));
+                yearList.addAll(Arrays.asList("2", "II", "2nd"));
+                break;
+            case "4":
+            case "IV":
+                semList.addAll(Arrays.asList("4", "IV"));
+                yearList.addAll(Arrays.asList("2", "II", "2nd"));
+                break;
+            case "5":
+            case "V":
+                semList.addAll(Arrays.asList("5", "V"));
+                yearList.addAll(Arrays.asList("3", "III", "3rd"));
+                break;
+            case "6":
+            case "VI":
+                semList.addAll(Arrays.asList("6", "VI"));
+                yearList.addAll(Arrays.asList("3", "III", "3rd"));
+                break;
+            case "7":
+            case "VII":
+                semList.addAll(Arrays.asList("7", "VII"));
+                yearList.addAll(Arrays.asList("4", "IV", "4th"));
+                break;
+            case "8":
+            case "VIII":
+                semList.addAll(Arrays.asList("8", "VIII"));
+                yearList.addAll(Arrays.asList("4", "IV", "4th"));
+                break;
+            default:
+                semList.add(sem);
+                yearList.add(sem);
+                break;
+        }
+
+        return studentRepository.findByDepartmentAndSectionAndSemesterOrYear(
+                assessment.getDepartment(), assessment.getSection(), semList, yearList);
     }
 
     // Create an assessment (by class incharge or admin)
