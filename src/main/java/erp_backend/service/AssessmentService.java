@@ -405,7 +405,59 @@ public class AssessmentService {
     // GET consolidated class reports for IAT marks
     @Transactional(readOnly = true)
     public Map<String, Object> getConsolidatedMarksReport(String department, String semester, String section) {
-        List<Student> students = studentRepository.findByDepartmentAndSemesterAndSection(department, semester, section);
+        String sem = semester != null ? semester.trim().toUpperCase() : "";
+        List<String> semList = new ArrayList<>();
+        List<String> yearList = new ArrayList<>();
+
+        switch (sem) {
+            case "1":
+            case "I":
+                semList.addAll(Arrays.asList("1", "I"));
+                yearList.addAll(Arrays.asList("1", "I", "1st"));
+                break;
+            case "2":
+            case "II":
+                semList.addAll(Arrays.asList("2", "II"));
+                yearList.addAll(Arrays.asList("1", "I", "1st"));
+                break;
+            case "3":
+            case "III":
+                semList.addAll(Arrays.asList("3", "III"));
+                yearList.addAll(Arrays.asList("2", "II", "2nd"));
+                break;
+            case "4":
+            case "IV":
+                semList.addAll(Arrays.asList("4", "IV"));
+                yearList.addAll(Arrays.asList("2", "II", "2nd"));
+                break;
+            case "5":
+            case "V":
+                semList.addAll(Arrays.asList("5", "V"));
+                yearList.addAll(Arrays.asList("3", "III", "3rd"));
+                break;
+            case "6":
+            case "VI":
+                semList.addAll(Arrays.asList("6", "VI"));
+                yearList.addAll(Arrays.asList("3", "III", "3rd"));
+                break;
+            case "7":
+            case "VII":
+                semList.addAll(Arrays.asList("7", "VII"));
+                yearList.addAll(Arrays.asList("4", "IV", "4th"));
+                break;
+            case "8":
+            case "VIII":
+                semList.addAll(Arrays.asList("8", "VIII"));
+                yearList.addAll(Arrays.asList("4", "IV", "4th"));
+                break;
+            default:
+                semList.add(sem);
+                yearList.add(sem);
+                break;
+        }
+
+        List<Student> students = studentRepository.findByDepartmentAndSectionAndSemesterOrYear(department, section,
+                semList, yearList);
         List<Assessment> weeklyList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
                 semester, section, "WEEKLY");
         List<Assessment> iatList = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(department,
@@ -472,6 +524,8 @@ public class AssessmentService {
                 for (int i = 1; i <= 6; i++) {
                     dtMarks.put("Daily Test " + i, null);
                 }
+
+                int fallbackIndex = 1;
                 for (Assessment weekly : weeklyList) {
                     if (weekly.getSubject() != null
                             && weekly.getSubject().getCode().equalsIgnoreCase(subject.getCode())) {
@@ -479,7 +533,13 @@ public class AssessmentService {
                                 .getOrDefault(student.getId(), Collections.emptyMap())
                                 .getOrDefault(weekly.getId(), Collections.emptyList());
                         if (!marks.isEmpty()) {
-                            dtMarks.put(weekly.getName().trim(), marks.get(0).getMarksObtained());
+                            // Extract numeric index from name
+                            String n = weekly.getName().trim().replaceAll("[^0-9]", "");
+                            String assignedKey = !n.isEmpty() ? "Daily Test " + n : "Daily Test " + fallbackIndex;
+                            dtMarks.put(assignedKey, marks.get(0).getMarksObtained());
+                            if (n.isEmpty()) {
+                                fallbackIndex++;
+                            }
                         }
                     }
                 }
