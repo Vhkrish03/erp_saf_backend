@@ -582,12 +582,16 @@ public class AssessmentService {
                         }
 
                         if (isIat1) {
-                            iat1Marks = compMap;
-                            iat1Weighted = weightedSum;
+                            if (!compMap.isEmpty() || iat1Marks.isEmpty()) {
+                                iat1Marks = compMap;
+                                iat1Weighted = weightedSum;
+                            }
                             iat1Found = true;
                         } else {
-                            iat2Marks = compMap;
-                            iat2Weighted = weightedSum;
+                            if (!compMap.isEmpty() || iat2Marks.isEmpty()) {
+                                iat2Marks = compMap;
+                                iat2Weighted = weightedSum;
+                            }
                             iat2Found = true;
                         }
                     }
@@ -608,7 +612,7 @@ public class AssessmentService {
                                 .getOrDefault(model.getId(), Collections.emptyList());
                         if (!marks.isEmpty()) {
                             String n = model.getName().trim().replaceAll("[^0-9]", "");
-                            String assignedKey = !n.isEmpty() ? "Model " + n : "Model " + fallbackModelIndex;
+                            String assignedKey = !n.isEmpty() ? "Model Exam " + n : "Model Exam " + fallbackModelIndex;
                             modelMarks.put(assignedKey, marks.get(0).getMarksObtained());
                             if (n.isEmpty()) {
                                 fallbackModelIndex++;
