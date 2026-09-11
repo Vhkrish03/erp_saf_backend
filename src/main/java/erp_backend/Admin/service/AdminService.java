@@ -258,7 +258,7 @@ public class AdminService {
     // ==========================================
 
     @Transactional
-    public User createAdmin(String fullName, String email, String password) {
+    public User createAdmin(String fullName, String email, String password, String role) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email " + email + " is already registered.");
         }
@@ -267,25 +267,7 @@ public class AdminService {
         user.setFullName(fullName);
         user.setEmail(email);
         user.setPassword(password);
-        user.setRole("ADMIN");
-        user.setIsActive(true);
-        user.setReferenceId(null);
-        user.setCreatedAt(LocalDateTime.now());
-
-        return userRepository.save(user);
-    }
-
-    @Transactional
-    public User createCurriculumAdmin(String fullName, String email, String password) {
-        if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email " + email + " is already registered.");
-        }
-
-        User user = new User();
-        user.setFullName(fullName);
-        user.setEmail(email);
-        user.setPassword(password);
-        user.setRole("CURRICULUM_ADMIN");
+        user.setRole(role != null ? role.toUpperCase() : "ADMIN");
         user.setIsActive(true);
         user.setReferenceId(null);
         user.setCreatedAt(LocalDateTime.now());

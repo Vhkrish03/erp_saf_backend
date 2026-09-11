@@ -30,7 +30,9 @@ public class AuthService {
     private final ExamCellAdminRepository examCellAdminRepository;
 
     /** Roles that log in with email instead of their staff/student ID */
-    private static final Set<String> EMAIL_LOGIN_ROLES = Set.of("ADMIN", "SUPER_ADMIN", "CURRICULUM_ADMIN");
+    private static final Set<String> EMAIL_LOGIN_ROLES = Set.of(
+            "ADMIN", "SUPER_ADMIN", "CURRICULUM_ADMIN",
+            "LIBRARIAN", "ACCOUNTANT", "MESS_ADMIN", "PLACEMENT_OFFICER");
 
     public AuthService(UserRepository userRepository,
             StudentRepository studentRepository,
