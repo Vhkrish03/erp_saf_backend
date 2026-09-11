@@ -42,10 +42,21 @@ public class AssessmentService {
     @Transactional
     public void ensureDefaultWeightgages(String department, String semester) {
         List<AssessmentWeightage> current = weightageRepository.findByDepartmentAndSemester(department, semester);
-        if (current.isEmpty()) {
+        Set<String> existingTypes = new HashSet<>();
+        for (AssessmentWeightage w : current) {
+            existingTypes.add(w.getComponentType().toUpperCase());
+        }
+
+        if (!existingTypes.contains("WRITTEN")) {
             weightageRepository.save(new AssessmentWeightage(department, semester, "WRITTEN", 0.50));
+        }
+        if (!existingTypes.contains("ASSIGNMENT")) {
             weightageRepository.save(new AssessmentWeightage(department, semester, "ASSIGNMENT", 0.20));
+        }
+        if (!existingTypes.contains("SEMINAR")) {
             weightageRepository.save(new AssessmentWeightage(department, semester, "SEMINAR", 0.15));
+        }
+        if (!existingTypes.contains("QUIZ")) {
             weightageRepository.save(new AssessmentWeightage(department, semester, "QUIZ", 0.15));
         }
     }
