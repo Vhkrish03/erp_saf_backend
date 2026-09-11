@@ -7,12 +7,19 @@ import org.springframework.stereotype.Service;
 
 import erp_backend.entity.Subject;
 import erp_backend.repository.SubjectRepository;
+import erp_backend.curriculum.repository.CurriculumRepository;
+import erp_backend.curriculum.entity.Curriculum;
+import erp_backend.curriculum.entity.CurriculumSubject;
+import java.util.Optional;
 
 @Service
 public class SubjectService {
 
     @Autowired
     private SubjectRepository repository;
+
+    @Autowired
+    private CurriculumRepository curriculumRepository;
 
     public List<Subject> getAllSubjects() {
         return repository.findAll();
@@ -28,6 +35,21 @@ public class SubjectService {
 
     public List<Subject> getSubjectsByFilter(String dept, String year, int semester) {
         return repository.findByDepartmentAndYearAndSemester(dept, year, semester);
+    }
+
+    public List<Subject> getSubjectsByFilterExtended(String dept, String year, int semester, String academicYear) {
+        if (academicYear != null && !academicYear.trim().isEmpty()) {
+            Optional<Curriculum> curriculumOpt = curriculumRepository
+                    .findFirstByDepartmentAndYearAndSemesterAndAcademicYearAndStatus(
+                            dept, year, semester, academicYear, "PUBLISHED");
+
+            if (curriculumOpt.isPresent()) {
+                return curriculumOpt.get().getSubjects().stream()
+                        .map(CurriculumSubject::getSubject)
+                        .toList();
+            }
+        }
+        return getSubjectsByFilter(dept, year, semester);
     }
 
     public Subject createSubject(Subject subject) {

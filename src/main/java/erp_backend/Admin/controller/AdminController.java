@@ -509,6 +509,28 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/create-curriculum-admin")
+    public ResponseEntity<?> createCurriculumAdmin(@RequestBody Map<String, Object> payload) {
+        try {
+            String fullName = (String) payload.get("fullName");
+            String email = (String) payload.get("email");
+            String password = (String) payload.get("password");
+
+            if (fullName == null || email == null || password == null ||
+                    fullName.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "All fields are required"));
+            }
+
+            User adminUser = adminService.createCurriculumAdmin(fullName, email, password);
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Server error: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/users")
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());

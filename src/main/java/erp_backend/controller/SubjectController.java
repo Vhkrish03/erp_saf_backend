@@ -36,9 +36,10 @@ public class SubjectController {
     public List<Subject> getSubjectsByFilter(
             @RequestParam String department,
             @RequestParam String year,
-            @RequestParam int semester) {
+            @RequestParam int semester,
+            @RequestParam(required = false) String academicYear) {
         String normalizedYear = normalizeYear(year);
-        return service.getSubjectsByFilter(department, normalizedYear, semester);
+        return service.getSubjectsByFilterExtended(department, normalizedYear, semester, academicYear);
     }
 
     private String normalizeYear(String year) {
