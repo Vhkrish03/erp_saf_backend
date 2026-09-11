@@ -28,7 +28,20 @@ public class ErpBackendApplication {
                 examCellUser.setIsActive(true);
                 examCellUser.setCreatedAt(java.time.LocalDateTime.now());
                 userRepository.save(examCellUser);
-                System.out.println("====== STARTUP DB SYNC: Seeded Exam Cell Admin (EXX001 / password) ======");
+                System.out.println("====== STARTUP DB SYNC: Seeded Exam Cell Admin (EXM001 / password) ======");
+            }
+
+            // Seed SUPER_ADMIN if not exists
+            if (userRepository.findByEmail("admin@college.edu").isEmpty()) {
+                erp_backend.entity.User superAdmin = new erp_backend.entity.User();
+                superAdmin.setFullName("System Admin");
+                superAdmin.setEmail("admin@college.edu");
+                superAdmin.setPassword("admin123");
+                superAdmin.setRole("SUPER_ADMIN");
+                superAdmin.setIsActive(true);
+                superAdmin.setCreatedAt(java.time.LocalDateTime.now());
+                userRepository.save(superAdmin);
+                System.out.println("====== STARTUP DB SYNC: Seeded Super Admin (admin@college.edu / admin123) ======");
             }
 
             // Force Subject ID 3 to be held by EMP006
