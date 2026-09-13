@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface AssessmentMarkRepository extends JpaRepository<AssessmentMark, Long> {
     List<AssessmentMark> findByAssessmentId(Long assessmentId);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "student", "assessment", "component" })
     List<AssessmentMark> findByAssessmentIdIn(java.util.Collection<Long> assessmentIds);
 
     List<AssessmentMark> findByAssessmentIdAndStudentId(Long assessmentId, String studentId);

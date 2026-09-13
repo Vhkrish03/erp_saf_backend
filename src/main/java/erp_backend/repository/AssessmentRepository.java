@@ -17,6 +17,7 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
         List<Assessment> findByDepartmentAndYearAndSemesterAndSection(String department, int year, String semester,
                         String section);
 
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "subject", "components", "workflow" })
         List<Assessment> findByDepartmentAndSemesterAndSectionAndType(String department, String semester,
                         String section,
                         String type);
