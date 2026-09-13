@@ -278,16 +278,23 @@ public class ManagementService {
         List<String> departments = Arrays.asList("CSE", "AIDS", "BIOTECH", "ECE", "EEE", "BME", "CIVIL", "MECH", "S&H");
         List<DepartmentPerformanceDTO> list = new ArrayList<>();
 
+        // PERFORMANCE EFFICIENCY: Retrieve DB dump ONCE to avoid N+1 / 36 repeated
+        // massive queries inside loop.
+        List<Student> allStudents = studentRepository.findAll();
+        List<AttendanceRecord> allRecords = attendanceRecordRepository.findAll();
+        List<SemesterResult> allResults = semesterResultRepository.findAll();
+        List<StudentFee> allFees = studentFeeRepository.findAll();
+
         for (String dept : departments) {
             DepartmentPerformanceDTO dto = new DepartmentPerformanceDTO();
             dto.setDepartmentName(dept);
 
             // Total Students
-            long students = studentRepository.findAll().stream().filter(s -> dept.equals(s.getDepartment())).count();
+            long students = allStudents.stream().filter(s -> dept.equals(s.getDepartment())).count();
             dto.setTotalStudents(students);
 
             // Attendance
-            List<AttendanceRecord> records = attendanceRecordRepository.findAll().stream()
+            List<AttendanceRecord> records = allRecords.stream()
                     .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
                     .collect(Collectors.toList());
             if (!records.isEmpty()) {
@@ -298,7 +305,7 @@ public class ManagementService {
             }
 
             // Pass Rate
-            List<SemesterResult> results = semesterResultRepository.findAll().stream()
+            List<SemesterResult> results = allResults.stream()
                     .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
                     .collect(Collectors.toList());
             if (!results.isEmpty()) {
@@ -309,7 +316,7 @@ public class ManagementService {
             }
 
             // Fee Collection
-            List<StudentFee> fees = studentFeeRepository.findAll().stream()
+            List<StudentFee> fees = allFees.stream()
                     .filter(f -> f.getStudent() != null && dept.equals(f.getStudent().getDepartment()))
                     .collect(Collectors.toList());
             if (!fees.isEmpty()) {
