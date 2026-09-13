@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -134,9 +135,48 @@ public class FinanceDepartmentService {
         long pendingStructures = allStructures.stream().filter(f -> "UNDER_REVIEW".equals(f.getStatus())).count();
         dto.setPendingFeeStructures(pendingStructures);
         
-        dto.setPendingRefunds(0); // If no refund entity, keep 0
         dto.setUnverifiedPayments(0); // Implementation depends on manual payments
 
         return dto;
+    }
+
+    public List<FeeStructure> getAllFeeStructures() {
+        return feeStructureRepository.findAll();
+    }
+
+    public FeeStructure approveFeeStructure(Long id, String approvedBy) {
+        FeeStructure fs = feeStructureRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Fee structure not found"));
+        if (!"UNDER_REVIEW".equals(fs.getStatus())) {
+            throw new IllegalArgumentException("Fee structure is not UNDER_REVIEW");
+        }
+        fs.setStatus("APPROVED");
+        fs.setApprovedBy(approvedBy);
+        fs.setApprovedAt(LocalDateTime.now());
+        return feeStructureRepository.save(fs);
+    }
+
+    public FeeStructure rejectFeeStructure(Long id, String rejectedBy, String reason) {
+        FeeStructure fs = feeStructureRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Fee structure not found"));
+        if (!"UNDER_REVIEW".equals(fs.getStatus())) {
+            throw new IllegalArgumentException("Fee structure is not UNDER_REVIEW");
+        }
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Rejection reason is required");
+        }
+        fs.setStatus("REJECTED");
+        fs.setRejectionReason(reason);
+        // Note: keeping published/approved info empty if rejected before, or maybe nullifying it.
+        return feeStructureRepository.save(fs);
+    }
+
+    public FeeStructure publishFeeStructure(Long id, String publishedBy) {
+        FeeStructure fs = feeStructureRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Fee structure not found"));
+        if (!"APPROVED".equals(fs.getStatus())) {
+            throw new IllegalArgumentException("Only APPROVED structures can be published");
+        }
+        fs.setStatus("PUBLISHED");
+        fs.setPublishedBy(publishedBy);
+        fs.setPublishedAt(LocalDateTime.now());
+        return feeStructureRepository.save(fs);
     }
 }
