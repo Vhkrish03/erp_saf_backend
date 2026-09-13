@@ -50,7 +50,7 @@ public class FeeStructure {
     private String status = "DRAFT"; // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, PUBLISHED, REJECTED
     
     @Column(name = "version")
-    private int version = 1;
+    private Integer version = 1;
 
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
