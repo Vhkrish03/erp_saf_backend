@@ -1,16 +1,14 @@
 package erp_backend.management.controller;
 
 import org.springframework.web.bind.annotation.*;
-
-import erp_backend.management.dto.InstitutionOverviewDTO;
-import erp_backend.management.dto.StudentOverviewDTO;
-import erp_backend.management.dto.StaffOverviewDTO;
-import erp_backend.management.service.ManagementService;
 import org.springframework.http.ResponseEntity;
+
+import erp_backend.management.dto.*;
+import erp_backend.management.service.ManagementService;
 
 @RestController
 @RequestMapping("/api/management")
-@CrossOrigin(origins = "*") // Follow existing CORS policy or use specific policy if defined
+@CrossOrigin(origins = "*")
 public class ManagementController {
 
     private final ManagementService managementService;
@@ -21,9 +19,6 @@ public class ManagementController {
 
     @GetMapping("/institution-overview")
     public ResponseEntity<InstitutionOverviewDTO> getInstitutionOverview() {
-        // Simple manual role check can be added here if no Spring Security interceptor
-        // exists
-        // However, standard Spring configuration should handle role checking.
         return ResponseEntity.ok(managementService.getInstitutionOverview());
     }
 
@@ -39,5 +34,45 @@ public class ManagementController {
     public ResponseEntity<StaffOverviewDTO> getStaffOverview(
             @RequestParam(required = false) String department) {
         return ResponseEntity.ok(managementService.getStaffOverview(department));
+    }
+
+    @GetMapping("/academic/overview")
+    public ResponseEntity<AcademicOverviewDTO> getAcademicOverview(
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(managementService.getAcademicOverview(department));
+    }
+
+    @GetMapping("/attendance/overview")
+    public ResponseEntity<AttendanceOverviewDTO> getAttendanceOverview(
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(managementService.getAttendanceOverview(department));
+    }
+
+    @GetMapping("/examinations/overview")
+    public ResponseEntity<ExaminationOverviewDTO> getExaminationOverview(
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(managementService.getExaminationOverview(department));
+    }
+
+    @GetMapping("/finance/overview")
+    public ResponseEntity<FinancialOverviewDTO> getFinancialOverview(
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(managementService.getFinancialOverview(department));
+    }
+
+    @GetMapping("/administration/overview")
+    public ResponseEntity<AdministrationOverviewDTO> getAdministrationOverview(
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(managementService.getAdministrationOverview(department));
+    }
+
+    @GetMapping("/transport/overview")
+    public ResponseEntity<TransportOverviewDTO> getTransportOverview() {
+        return ResponseEntity.ok(managementService.getTransportOverview());
+    }
+
+    @GetMapping("/hostel/overview")
+    public ResponseEntity<HostelOverviewDTO> getHostelOverview() {
+        return ResponseEntity.ok(managementService.getHostelOverview());
     }
 }
