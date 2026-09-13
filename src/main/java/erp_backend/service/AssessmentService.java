@@ -4,6 +4,8 @@ import erp_backend.entity.*;
 import erp_backend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
+import erp_backend.academics.entity.FacultySubjectAssignment;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -21,6 +23,7 @@ public class AssessmentService {
     private final AssessmentWorkflowRepository workflowRepository;
     private final StudentRepository studentRepository;
     private final SubjectRepository subjectRepository;
+    private final FacultySubjectAssignmentRepository facultySubjectAssignmentRepository;
 
     public AssessmentService(AssessmentRepository assessmentRepository,
             AssessmentComponentRepository componentRepository,
@@ -28,7 +31,8 @@ public class AssessmentService {
             AssessmentWeightageRepository weightageRepository,
             AssessmentWorkflowRepository workflowRepository,
             StudentRepository studentRepository,
-            SubjectRepository subjectRepository) {
+            SubjectRepository subjectRepository,
+            FacultySubjectAssignmentRepository facultySubjectAssignmentRepository) {
         this.assessmentRepository = assessmentRepository;
         this.componentRepository = componentRepository;
         this.markRepository = markRepository;
@@ -36,6 +40,7 @@ public class AssessmentService {
         this.workflowRepository = workflowRepository;
         this.studentRepository = studentRepository;
         this.subjectRepository = subjectRepository;
+        this.facultySubjectAssignmentRepository = facultySubjectAssignmentRepository;
     }
 
     // Initialize Default Weightages if not exists
@@ -517,6 +522,19 @@ public class AssessmentService {
             }
         }
 
+        // Also fetch from FacultySubjectAssignments so pending subjects are shown
+        if (yearList != null) {
+            for (String ty : yearList) {
+                List<FacultySubjectAssignment> assignments = facultySubjectAssignmentRepository
+                        .findByDepartmentAndYearAndSemesterAndSection(department, ty, semester, section);
+                for (FacultySubjectAssignment fsa : assignments) {
+                    if (fsa.getSubject() != null) {
+                        subjects.add(fsa.getSubject());
+                    }
+                }
+            }
+        }
+
         for (Student student : students) {
             Map<String, Object> stuRpt = new HashMap<>();
             stuRpt.put("studentId", student.getId());
@@ -655,6 +673,15 @@ public class AssessmentService {
         response.put("section", section);
         response.put("department", department);
         response.put("students", studentReports);
+
+        List<Map<String, String>> assignedSubjectsList = new ArrayList<>();
+        for (Subject subject : subjects) {
+            Map<String, String> sMap = new HashMap<>();
+            sMap.put("code", subject.getCode());
+            sMap.put("name", subject.getName());
+            assignedSubjectsList.add(sMap);
+        }
+        response.put("assignedSubjects", assignedSubjectsList);
 
         return response;
     }
