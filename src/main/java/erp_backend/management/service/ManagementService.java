@@ -273,4 +273,63 @@ public class ManagementService {
         dto.setOccupiedBeds(hostels.stream().mapToLong(Hostel::getOccupiedBeds).sum());
         return dto;
     }
+
+    public List<DepartmentPerformanceDTO> getAllDepartmentPerformances() {
+        List<String> departments = Arrays.asList("CSE", "AIDS", "BIOTECH", "ECE", "EEE", "BME", "CIVIL", "MECH", "S&H");
+        List<DepartmentPerformanceDTO> list = new ArrayList<>();
+
+        for (String dept : departments) {
+            DepartmentPerformanceDTO dto = new DepartmentPerformanceDTO();
+            dto.setDepartmentName(dept);
+
+            // Total Students
+            long students = studentRepository.findAll().stream().filter(s -> dept.equals(s.getDepartment())).count();
+            dto.setTotalStudents(students);
+
+            // Attendance
+            List<AttendanceRecord> records = attendanceRecordRepository.findAll().stream()
+                    .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
+                    .collect(Collectors.toList());
+            if (!records.isEmpty()) {
+                long present = records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
+                dto.setAttendancePercentage((double) present / records.size() * 100);
+            } else {
+                dto.setAttendancePercentage(0);
+            }
+
+            // Pass Rate
+            List<SemesterResult> results = semesterResultRepository.findAll().stream()
+                    .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
+                    .collect(Collectors.toList());
+            if (!results.isEmpty()) {
+                long passed = results.stream().filter(r -> r.getSgpa() >= 5.0).count();
+                dto.setPassPercentage((double) passed / results.size() * 100);
+            } else {
+                dto.setPassPercentage(0);
+            }
+
+            // Fee Collection
+            List<StudentFee> fees = studentFeeRepository.findAll().stream()
+                    .filter(f -> f.getStudent() != null && dept.equals(f.getStudent().getDepartment()))
+                    .collect(Collectors.toList());
+            if (!fees.isEmpty()) {
+                BigDecimal demand = BigDecimal.ZERO;
+                BigDecimal collected = BigDecimal.ZERO;
+                for (StudentFee f : fees) {
+                    demand = demand.add(BigDecimal.valueOf(f.getTotalFee()));
+                    collected = collected.add(BigDecimal.valueOf(f.getAmountPaid()));
+                }
+                if (demand.compareTo(BigDecimal.ZERO) > 0) {
+                    dto.setFeeCollectionPercentage(collected.doubleValue() / demand.doubleValue() * 100);
+                } else {
+                    dto.setFeeCollectionPercentage(0);
+                }
+            } else {
+                dto.setFeeCollectionPercentage(0);
+            }
+
+            list.add(dto);
+        }
+        return list;
+    }
 }

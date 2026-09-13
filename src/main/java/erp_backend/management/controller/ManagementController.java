@@ -75,4 +75,9 @@ public class ManagementController {
     public ResponseEntity<HostelOverviewDTO> getHostelOverview() {
         return ResponseEntity.ok(managementService.getHostelOverview());
     }
+
+    @GetMapping("/department-performance/all")
+    public ResponseEntity<java.util.List<DepartmentPerformanceDTO>> getAllDepartmentPerformances() {
+        return ResponseEntity.ok(managementService.getAllDepartmentPerformances());
+    }
 }
