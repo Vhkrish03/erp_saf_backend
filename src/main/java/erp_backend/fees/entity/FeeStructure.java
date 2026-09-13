@@ -45,6 +45,39 @@ public class FeeStructure {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Column(name = "status")
+    private String status = "DRAFT"; // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, PUBLISHED, REJECTED
+    
+    @Column(name = "version")
+    private int version = 1;
+
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
+
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
+    @Column(name = "submitted_by")
+    private String submittedBy;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    @Column(name = "approved_by")
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "published_by")
+    private String publishedBy;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 
     @PrePersist
     protected void onCreate() {
@@ -155,5 +188,13 @@ public class FeeStructure {
 
     public void setCreatedAt(LocalDateTime v) {
         this.createdAt = v;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
