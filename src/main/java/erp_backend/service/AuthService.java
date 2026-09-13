@@ -2,7 +2,6 @@ package erp_backend.service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -29,11 +28,6 @@ public class AuthService {
     private final HodRepository hodRepository;
     private final ExamCellAdminRepository examCellAdminRepository;
 
-    /** Roles that log in with email instead of their staff/student ID */
-    private static final Set<String> EMAIL_LOGIN_ROLES = Set.of(
-            "ADMIN", "SUPER_ADMIN", "MANAGEMENT", "CURRICULUM_ADMIN",
-            "FINANCE_HEAD", "LIBRARIAN", "ACCOUNTANT", "MESS_ADMIN", "PLACEMENT_OFFICER");
-
     public AuthService(UserRepository userRepository,
             StudentRepository studentRepository,
             TeacherRepository teacherRepository,
@@ -47,10 +41,8 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-
         String loginId = request.getLoginId() == null ? "" : request.getLoginId().trim();
         String password = request.getPassword() == null ? "" : request.getPassword();
-        String role = request.getRole() == null ? "" : request.getRole().trim().toUpperCase();
 
         if (loginId.isEmpty()) {
             return fail("Please enter your ID / Email.");
@@ -59,12 +51,9 @@ public class AuthService {
             return fail("Please enter your password.");
         }
 
-        if (EMAIL_LOGIN_ROLES.contains(role)) {
-            // Admin/Super-admin still log in with email
-            Optional<User> userOpt = userRepository.findByEmail(loginId);
-            if (userOpt.isEmpty()) {
-                return fail("No account found for the provided Email.");
-            }
+        // 1. Check in User table (Email-based roles)
+        Optional<User> userOpt = userRepository.findByEmail(loginId);
+        if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (!user.getPassword().equals(password)) {
                 return fail("Incorrect password. Please try again.");
@@ -85,44 +74,46 @@ public class AuthService {
                     user.getReferenceId());
         }
 
-        if (role.equals("STUDENT")) {
-            Optional<Student> opt = studentRepository.findById(loginId);
-            if (opt.isEmpty())
-                return fail("No account found for the provided Student ID.");
-            Student s = opt.get();
+        // 2. Check Student
+        Optional<Student> studentOpt = studentRepository.findById(loginId);
+        if (studentOpt.isPresent()) {
+            Student s = studentOpt.get();
             if (s.getPassword() == null || !s.getPassword().equals(password))
                 return fail("Incorrect password. Please try again.");
             return new LoginResponse(true, "Login Successful", "STUDENT", null, s.getName(), s.getEmail(), s.getId());
-        } else if (role.equals("FACULTY")) {
-            Optional<Teacher> opt = teacherRepository.findByEmployeeId(loginId);
-            if (opt.isEmpty())
-                return fail("No account found for the provided Employee ID.");
-            Teacher t = opt.get();
+        }
+
+        // 3. Check Teacher (Faculty)
+        Optional<Teacher> teacherOpt = teacherRepository.findByEmployeeId(loginId);
+        if (teacherOpt.isPresent()) {
+            Teacher t = teacherOpt.get();
             if (t.getPassword() == null || !t.getPassword().equals(password))
                 return fail("Incorrect password. Please try again.");
             return new LoginResponse(true, "Login Successful", "FACULTY", t.getId(), t.getName(), t.getEmail(),
                     t.getEmployeeId());
-        } else if (role.equals("HOD")) {
-            Optional<Hod> opt = hodRepository.findByEmployeeId(loginId);
-            if (opt.isEmpty())
-                return fail("No account found for the provided Employee ID.");
-            Hod h = opt.get();
+        }
+
+        // 4. Check HOD
+        Optional<Hod> hodOpt = hodRepository.findByEmployeeId(loginId);
+        if (hodOpt.isPresent()) {
+            Hod h = hodOpt.get();
             if (h.getPassword() == null || !h.getPassword().equals(password))
                 return fail("Incorrect password. Please try again.");
             return new LoginResponse(true, "Login Successful", "HOD", h.getId(), h.getName(), h.getEmail(),
                     h.getEmployeeId());
-        } else if (role.equals("EXAM_CELL")) {
-            Optional<ExamCellAdmin> opt = examCellAdminRepository.findByEmployeeId(loginId);
-            if (opt.isEmpty())
-                return fail("No account found for the provided Exam Cell ID.");
-            ExamCellAdmin e = opt.get();
+        }
+
+        // 5. Check Exam Cell
+        Optional<ExamCellAdmin> examOpt = examCellAdminRepository.findByEmployeeId(loginId);
+        if (examOpt.isPresent()) {
+            ExamCellAdmin e = examOpt.get();
             if (e.getPassword() == null || !e.getPassword().equals(password))
                 return fail("Incorrect password. Please try again.");
             return new LoginResponse(true, "Login Successful", "EXAM_CELL", e.getId(), e.getName(), e.getEmail(),
                     e.getEmployeeId());
         }
 
-        return fail("Invalid Role specified.");
+        return fail("No account found for the provided ID / Email.");
     }
 
     private LoginResponse fail(String message) {
