@@ -4,6 +4,8 @@ import erp_backend.entity.Student;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Links a Student to a FeeStructure for a given academic year + semester.
@@ -33,6 +35,9 @@ public class StudentFee {
 
     @Column(name = "total_fee", nullable = false)
     private double totalFee;
+
+    @OneToMany(mappedBy = "studentFee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<StudentFeeComponent> feeComponents = new ArrayList<>();
 
     @Column(name = "amount_paid")
     private double amountPaid = 0.0;
@@ -111,6 +116,10 @@ public class StudentFee {
         return totalFee;
     }
 
+    public List<StudentFeeComponent> getFeeComponents() {
+        return feeComponents;
+    }
+
     public double getAmountPaid() {
         return amountPaid;
     }
@@ -162,6 +171,15 @@ public class StudentFee {
 
     public void setTotalFee(double v) {
         this.totalFee = v;
+    }
+
+    public void setFeeComponents(List<StudentFeeComponent> feeComponents) {
+        this.feeComponents = feeComponents;
+        if (feeComponents != null) {
+            for (StudentFeeComponent c : feeComponents) {
+                c.setStudentFee(this);
+            }
+        }
     }
 
     public void setAmountPaid(double v) {

@@ -3,6 +3,8 @@ package erp_backend.fees.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "fee_structures")
@@ -26,8 +28,8 @@ public class FeeStructure {
 
     private String section; // null = applies to all sections
 
-    @Column(name = "fee_category", nullable = false)
-    private String feeCategory; // e.g. "Tuition", "Exam", "Library", "Transport"
+    @OneToMany(mappedBy = "feeStructure", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<FeeComponent> feeComponents = new ArrayList<>();
 
     @Column(name = "total_amount", nullable = false)
     private double totalAmount;
@@ -109,8 +111,8 @@ public class FeeStructure {
         return section;
     }
 
-    public String getFeeCategory() {
-        return feeCategory;
+    public List<FeeComponent> getFeeComponents() {
+        return feeComponents;
     }
 
     public double getTotalAmount() {
@@ -162,8 +164,13 @@ public class FeeStructure {
         this.section = v;
     }
 
-    public void setFeeCategory(String v) {
-        this.feeCategory = v;
+    public void setFeeComponents(List<FeeComponent> feeComponents) {
+        this.feeComponents = feeComponents;
+        if (feeComponents != null) {
+            for (FeeComponent c : feeComponents) {
+                c.setFeeStructure(this);
+            }
+        }
     }
 
     public void setTotalAmount(double v) {

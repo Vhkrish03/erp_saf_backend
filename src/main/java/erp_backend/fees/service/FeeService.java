@@ -6,7 +6,9 @@ import erp_backend.fees.dto.RecordPaymentRequest;
 import erp_backend.fees.dto.StudentFeeDto;
 import erp_backend.fees.entity.FeePayment;
 import erp_backend.fees.entity.FeeStructure;
+import erp_backend.fees.entity.FeeComponent;
 import erp_backend.fees.entity.StudentFee;
+import erp_backend.fees.entity.StudentFeeComponent;
 import erp_backend.fees.repository.FeePaymentRepository;
 import erp_backend.fees.repository.FeeStructureRepository;
 import erp_backend.fees.repository.StudentFeeRepository;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -182,7 +185,11 @@ public class FeeService {
         d.setSemester(sf.getSemester());
         d.setSection(sf.getStudent().getSection());
         d.setAcademicYear(sf.getAcademicYear());
-        d.setFeeCategory(sf.getFeeStructure() != null ? sf.getFeeStructure().getFeeCategory() : "");
+        if (sf.getFeeComponents() != null && !sf.getFeeComponents().isEmpty()) {
+            d.setFeeCategory(sf.getFeeComponents().stream().map(StudentFeeComponent::getName).collect(Collectors.joining(", ")));
+        } else {
+            d.setFeeCategory("Total Fee");
+        }
         d.setTotalFee(sf.getTotalFee());
         d.setAmountPaid(sf.getAmountPaid());
         d.setBalanceAmount(sf.getBalanceAmount());
@@ -202,59 +209,128 @@ public class FeeService {
         Student student = studentRepo.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
 
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Tuition Fee", tuitionFee);
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Mess Fee", messFee);
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Training Fee", trainingFee);
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Other Fee", otherFee);
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Transport Fee", transportFee);
-        saveOrUpdateCategoryFee(student, academicYear, semester, "Hostel Fee", hostelFee);
+        FeeStructure fs = new FeeStructure();
+        fs.setAcademicYear(academicYear);
+        fs.setSemester(semester);
+        fs.setDepartment(student.getDepartment());
+        fs.setTotalAmount(tuitionFee + messFee + trainingFee + otherFee + transportFee + hostelFee);
+        fs.setActive(true);
+        fs.setCreatedBy("ADMIN_CUSTOM");
+        fs.setStatus("PUBLISHED");
+        
+        List<FeeComponent> components = new ArrayList<>();
+        if (tuitionFee > 0) addComponent(components, "Tuition Fee", tuitionFee);
+        if (messFee > 0) addComponent(components, "Mess Fee", messFee);
+        if (trainingFee > 0) addComponent(components, "Training Fee", trainingFee);
+        if (otherFee > 0) addComponent(components, "Other Fee", otherFee);
+        if (transportFee > 0) addComponent(components, "Transport Fee", transportFee);
+        if (hostelFee > 0) addComponent(components, "Hostel Fee", hostelFee);
+        
+        fs.setFeeComponents(components);
+        fs = feeStructureRepo.save(fs);
+        
+        StudentFee newSf = new StudentFee();
+        newSf.setStudent(student);
+        newSf.setFeeStructure(fs);
+        newSf.setAcademicYear(academicYear);
+        newSf.setSemester(semester);
+        newSf.setTotalFee(fs.getTotalAmount());
+        newSf.setAmountPaid(0.0);
+        
+        List<StudentFeeComponent> sfcList = new ArrayList<>();
+        for (FeeComponent fc : components) {
+            StudentFeeComponent sfc = new StudentFeeComponent();
+            sfc.setName(fc.getName());
+            sfc.setAmount(fc.getAmount());
+            sfcList.add(sfc);
+        }
+        newSf.setFeeComponents(sfcList);
+        
+        newSf.recomputeStatus();
+        studentFeeRepo.save(newSf);
+    }
+    
+    private void addComponent(List<FeeComponent> list, String name, double amount) {
+        FeeComponent c = new FeeComponent();
+        c.setName(name);
+        c.setAmount(amount);
+        c.setApplicableCondition("ALL");
+        list.add(c);
     }
 
-    private void saveOrUpdateCategoryFee(Student student, String academicYear, String semester, String category,
-            double amount) {
-        // Step 1: Find or create standard/dummy FeeStructure for this
-        // category/dept/sem/ay
-        FeeStructure fs = feeStructureRepo.findByDepartmentAndSemesterAndAcademicYear(
-                student.getDepartment(), semester, academicYear).stream()
-                .filter(f -> category.equalsIgnoreCase(f.getFeeCategory())).findFirst().orElseGet(() -> {
-                    FeeStructure newFs = new FeeStructure();
-                    newFs.setAcademicYear(academicYear);
-                    newFs.setSemester(semester);
-                    newFs.setDepartment(student.getDepartment());
-                    newFs.setFeeCategory(category);
-                    newFs.setTotalAmount(amount > 0 ? amount : 1000.0);
-                    newFs.setActive(true);
-                    newFs.setCreatedBy("ADMIN_CUSTOM");
-                    return feeStructureRepo.save(newFs);
-                });
+    @Transactional
+    public void applyFeeStructureToTarget(FeeStructure fs) {
+        List<Student> targetStudents;
+        if (fs.getSection() != null && !fs.getSection().trim().isEmpty()) {
+            targetStudents = studentRepo.findByDepartmentAndSemesterAndSection(fs.getDepartment(), fs.getSemester(), fs.getSection());
+        } else {
+            targetStudents = studentRepo.findByDepartmentAndSemester(fs.getDepartment(), fs.getSemester());
+        }
 
-        // Step 2: See if StudentFee already exists
-        StudentFee sf = studentFeeRepo.findByStudentIdAndFeeStructureId(student.getId(), fs.getId()).orElse(null);
+        for (Student s : targetStudents) {
+            // Calculate applicable components
+            List<StudentFeeComponent> applicableComponents = new ArrayList<>();
+            double totalDemand = 0.0;
 
-        if (sf != null) {
-            if (amount <= 0) {
-                if (sf.getAmountPaid() == 0) {
-                    studentFeeRepo.delete(sf);
-                } else {
-                    sf.setTotalFee(0);
-                    sf.recomputeStatus();
-                    studentFeeRepo.save(sf);
+            if (fs.getFeeComponents() != null) {
+                for (FeeComponent fc : fs.getFeeComponents()) {
+                    boolean applies = false;
+                    String cond = fc.getApplicableCondition() != null ? fc.getApplicableCondition().toUpperCase() : "ALL";
+                    switch (cond) {
+                        case "ALL":
+                            applies = true;
+                            break;
+                        case "HOSTELLER":
+                            applies = "HOSTELLER".equalsIgnoreCase(s.getResidencyType());
+                            break;
+                        case "DAY_SCHOLAR":
+                            applies = "DAY_SCHOLAR".equalsIgnoreCase(s.getResidencyType());
+                            break;
+                        case "TRANSPORT_REQUIRED":
+                        case "BUS":
+                            applies = Boolean.TRUE.equals(s.getTransportRequired());
+                            break;
+                        default:
+                            applies = true;
+                    }
+
+                    if (applies) {
+                        StudentFeeComponent sfc = new StudentFeeComponent();
+                        sfc.setName(fc.getName());
+                        sfc.setAmount(fc.getAmount());
+                        applicableComponents.add(sfc);
+                        totalDemand += fc.getAmount();
+                    }
                 }
-            } else {
-                sf.setTotalFee(amount);
+            }
+
+            if (!applicableComponents.isEmpty()) {
+                // Check if already exists
+                StudentFee sf = studentFeeRepo.findByStudentIdAndFeeStructureId(s.getId(), fs.getId()).orElse(new StudentFee());
+                sf.setStudent(s);
+                sf.setFeeStructure(fs);
+                sf.setAcademicYear(fs.getAcademicYear());
+                sf.setSemester(fs.getSemester());
+                sf.setTotalFee(totalDemand);
+                // Retain amountPaid
+                sf.setAmountPaid(sf.getAmountPaid() > 0 ? sf.getAmountPaid() : 0.0);
+                sf.setDueDate(fs.getDueDate());
+                
+                // update components
+                if (sf.getFeeComponents() != null) {
+                    sf.getFeeComponents().clear();
+                } else {
+                    sf.setFeeComponents(new ArrayList<>());
+                }
+                
+                for (StudentFeeComponent sfc : applicableComponents) {
+                    sfc.setStudentFee(sf);
+                    sf.getFeeComponents().add(sfc);
+                }
+
                 sf.recomputeStatus();
                 studentFeeRepo.save(sf);
             }
-        } else if (amount > 0) {
-            StudentFee newSf = new StudentFee();
-            newSf.setStudent(student);
-            newSf.setFeeStructure(fs);
-            newSf.setAcademicYear(academicYear);
-            newSf.setSemester(semester);
-            newSf.setTotalFee(amount);
-            newSf.setAmountPaid(0.0);
-            newSf.recomputeStatus();
-            studentFeeRepo.save(newSf);
         }
     }
 }

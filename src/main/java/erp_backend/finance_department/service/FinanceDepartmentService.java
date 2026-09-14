@@ -21,13 +21,16 @@ public class FinanceDepartmentService {
     private final StudentFeeRepository studentFeeRepository;
     private final FeePaymentRepository feePaymentRepository;
     private final FeeStructureRepository feeStructureRepository;
+    private final erp_backend.fees.service.FeeService feeService;
 
     public FinanceDepartmentService(StudentFeeRepository studentFeeRepository,
                                     FeePaymentRepository feePaymentRepository,
-                                    FeeStructureRepository feeStructureRepository) {
+                                    FeeStructureRepository feeStructureRepository,
+                                    erp_backend.fees.service.FeeService feeService) {
         this.studentFeeRepository = studentFeeRepository;
         this.feePaymentRepository = feePaymentRepository;
         this.feeStructureRepository = feeStructureRepository;
+        this.feeService = feeService;
     }
 
     public FinanceDashboardDto getDashboardData() {
@@ -69,7 +72,10 @@ public class FinanceDepartmentService {
             deptPending.merge(dept, bal, BigDecimal::add);
 
             // Category breakdown
-            String cat = fee.getFeeStructure() != null ? fee.getFeeStructure().getFeeCategory() : "Tuition";
+            String cat = "Total Fee";
+            if (fee.getFeeComponents() != null && !fee.getFeeComponents().isEmpty()) {
+                cat = fee.getFeeComponents().get(0).getName();
+            }
             feeBreakdownExpected.merge(cat, total, BigDecimal::add);
             feeBreakdownCollected.merge(cat, amtPaid, BigDecimal::add);
             feeBreakdownPending.merge(cat, bal, BigDecimal::add);
@@ -177,6 +183,12 @@ public class FinanceDepartmentService {
         fs.setStatus("PUBLISHED");
         fs.setPublishedBy(publishedBy);
         fs.setPublishedAt(LocalDateTime.now());
-        return feeStructureRepository.save(fs);
+        
+        fs = feeStructureRepository.save(fs);
+        
+        // apply the structure to applicable students
+        feeService.applyFeeStructureToTarget(fs);
+        
+        return fs;
     }
 }
