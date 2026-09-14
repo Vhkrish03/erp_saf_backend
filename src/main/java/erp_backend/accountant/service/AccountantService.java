@@ -41,6 +41,11 @@ public class AccountantService {
         return feeService.getFeesForStudent(studentId);
     }
 
+    public List<StudentFeeDto> getFeesByFilter(String department, String academicYear, String semester,
+            boolean pendingOnly) {
+        return feeService.getFeesByFilter(department, academicYear, semester, pendingOnly);
+    }
+
     /**
      * Post an external payment (CASH, ONLINE, DD) from the Accountant desk.
      */

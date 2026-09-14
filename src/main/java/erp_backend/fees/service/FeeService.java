@@ -100,6 +100,16 @@ public class FeeService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public List<StudentFeeDto> getFeesByFilter(String dept, String academicYear, String sem, boolean pendingOnly) {
+        List<StudentFee> list;
+        if (pendingOnly) {
+            list = studentFeeRepo.findPendingByDeptClass(dept, sem, academicYear);
+        } else {
+            list = studentFeeRepo.findByDeptClass(dept, sem, academicYear);
+        }
+        return list.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
     // ─────────────────────────────── FeePayment
     // ───────────────────────────────────
 
@@ -186,7 +196,8 @@ public class FeeService {
         d.setSection(sf.getStudent().getSection());
         d.setAcademicYear(sf.getAcademicYear());
         if (sf.getFeeComponents() != null && !sf.getFeeComponents().isEmpty()) {
-            d.setFeeCategory(sf.getFeeComponents().stream().map(StudentFeeComponent::getName).collect(Collectors.joining(", ")));
+            d.setFeeCategory(
+                    sf.getFeeComponents().stream().map(StudentFeeComponent::getName).collect(Collectors.joining(", ")));
         } else {
             d.setFeeCategory("Total Fee");
         }
@@ -217,18 +228,24 @@ public class FeeService {
         fs.setActive(true);
         fs.setCreatedBy("ADMIN_CUSTOM");
         fs.setStatus("PUBLISHED");
-        
+
         List<FeeComponent> components = new ArrayList<>();
-        if (tuitionFee > 0) addComponent(components, "Tuition Fee", tuitionFee);
-        if (messFee > 0) addComponent(components, "Mess Fee", messFee);
-        if (trainingFee > 0) addComponent(components, "Training Fee", trainingFee);
-        if (otherFee > 0) addComponent(components, "Other Fee", otherFee);
-        if (transportFee > 0) addComponent(components, "Transport Fee", transportFee);
-        if (hostelFee > 0) addComponent(components, "Hostel Fee", hostelFee);
-        
+        if (tuitionFee > 0)
+            addComponent(components, "Tuition Fee", tuitionFee);
+        if (messFee > 0)
+            addComponent(components, "Mess Fee", messFee);
+        if (trainingFee > 0)
+            addComponent(components, "Training Fee", trainingFee);
+        if (otherFee > 0)
+            addComponent(components, "Other Fee", otherFee);
+        if (transportFee > 0)
+            addComponent(components, "Transport Fee", transportFee);
+        if (hostelFee > 0)
+            addComponent(components, "Hostel Fee", hostelFee);
+
         fs.setFeeComponents(components);
         fs = feeStructureRepo.save(fs);
-        
+
         StudentFee newSf = new StudentFee();
         newSf.setStudent(student);
         newSf.setFeeStructure(fs);
@@ -236,7 +253,7 @@ public class FeeService {
         newSf.setSemester(semester);
         newSf.setTotalFee(fs.getTotalAmount());
         newSf.setAmountPaid(0.0);
-        
+
         List<StudentFeeComponent> sfcList = new ArrayList<>();
         for (FeeComponent fc : components) {
             StudentFeeComponent sfc = new StudentFeeComponent();
@@ -245,11 +262,11 @@ public class FeeService {
             sfcList.add(sfc);
         }
         newSf.setFeeComponents(sfcList);
-        
+
         newSf.recomputeStatus();
         studentFeeRepo.save(newSf);
     }
-    
+
     private void addComponent(List<FeeComponent> list, String name, double amount) {
         FeeComponent c = new FeeComponent();
         c.setName(name);
@@ -262,7 +279,8 @@ public class FeeService {
     public void applyFeeStructureToTarget(FeeStructure fs) {
         List<Student> targetStudents;
         if (fs.getSection() != null && !fs.getSection().trim().isEmpty()) {
-            targetStudents = studentRepo.findByDepartmentAndSemesterAndSection(fs.getDepartment(), fs.getSemester(), fs.getSection());
+            targetStudents = studentRepo.findByDepartmentAndSemesterAndSection(fs.getDepartment(), fs.getSemester(),
+                    fs.getSection());
         } else {
             targetStudents = studentRepo.findByDepartmentAndSemester(fs.getDepartment(), fs.getSemester());
         }
@@ -275,7 +293,8 @@ public class FeeService {
             if (fs.getFeeComponents() != null) {
                 for (FeeComponent fc : fs.getFeeComponents()) {
                     boolean applies = false;
-                    String cond = fc.getApplicableCondition() != null ? fc.getApplicableCondition().toUpperCase() : "ALL";
+                    String cond = fc.getApplicableCondition() != null ? fc.getApplicableCondition().toUpperCase()
+                            : "ALL";
                     switch (cond) {
                         case "ALL":
                             applies = true;
@@ -306,7 +325,8 @@ public class FeeService {
 
             if (!applicableComponents.isEmpty()) {
                 // Check if already exists
-                StudentFee sf = studentFeeRepo.findByStudentIdAndFeeStructureId(s.getId(), fs.getId()).orElse(new StudentFee());
+                StudentFee sf = studentFeeRepo.findByStudentIdAndFeeStructureId(s.getId(), fs.getId())
+                        .orElse(new StudentFee());
                 sf.setStudent(s);
                 sf.setFeeStructure(fs);
                 sf.setAcademicYear(fs.getAcademicYear());
@@ -315,14 +335,14 @@ public class FeeService {
                 // Retain amountPaid
                 sf.setAmountPaid(sf.getAmountPaid() > 0 ? sf.getAmountPaid() : 0.0);
                 sf.setDueDate(fs.getDueDate());
-                
+
                 // update components
                 if (sf.getFeeComponents() != null) {
                     sf.getFeeComponents().clear();
                 } else {
                     sf.setFeeComponents(new ArrayList<>());
                 }
-                
+
                 for (StudentFeeComponent sfc : applicableComponents) {
                     sfc.setStudentFee(sf);
                     sf.getFeeComponents().add(sfc);

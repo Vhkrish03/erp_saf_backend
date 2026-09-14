@@ -11,30 +11,45 @@ import java.util.Optional;
 
 @Repository
 public interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
-    @Query("SELECT sf FROM StudentFee sf JOIN FETCH sf.student")
-    List<StudentFee> findAllWithStudent();
+        @Query("SELECT sf FROM StudentFee sf JOIN FETCH sf.student")
+        List<StudentFee> findAllWithStudent();
 
-    List<StudentFee> findByStudentId(String studentId);
+        List<StudentFee> findByStudentId(String studentId);
 
-    Optional<StudentFee> findByStudentIdAndFeeStructureId(String studentId, Long feeStructureId);
+        Optional<StudentFee> findByStudentIdAndFeeStructureId(String studentId, Long feeStructureId);
 
-    List<StudentFee> findByAcademicYearAndSemester(String academicYear, String semester);
+        List<StudentFee> findByAcademicYearAndSemester(String academicYear, String semester);
 
-    @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
-            "AND sf.student.semester = :sem AND sf.student.section = :sec " +
-            "AND sf.academicYear = :ay")
-    List<StudentFee> findByClassSection(
-            @Param("dept") String department,
-            @Param("sem") String semester,
-            @Param("sec") String section,
-            @Param("ay") String academicYear);
+        @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
+                        "AND sf.student.semester = :sem AND sf.academicYear = :ay")
+        List<StudentFee> findByDeptClass(
+                        @Param("dept") String department,
+                        @Param("sem") String semester,
+                        @Param("ay") String academicYear);
 
-    @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
-            "AND sf.student.semester = :sem AND sf.student.section = :sec " +
-            "AND sf.academicYear = :ay AND sf.paymentStatus IN ('PENDING', 'OVERDUE', 'PARTIALLY_PAID')")
-    List<StudentFee> findPendingByClassSection(
-            @Param("dept") String department,
-            @Param("sem") String semester,
-            @Param("sec") String section,
-            @Param("ay") String academicYear);
+        @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
+                        "AND sf.student.semester = :sem AND sf.academicYear = :ay " +
+                        "AND sf.paymentStatus IN ('PENDING', 'OVERDUE', 'PARTIALLY_PAID')")
+        List<StudentFee> findPendingByDeptClass(
+                        @Param("dept") String department,
+                        @Param("sem") String semester,
+                        @Param("ay") String academicYear);
+
+        @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
+                        "AND sf.student.semester = :sem AND sf.student.section = :sec " +
+                        "AND sf.academicYear = :ay")
+        List<StudentFee> findByClassSection(
+                        @Param("dept") String department,
+                        @Param("sem") String semester,
+                        @Param("sec") String section,
+                        @Param("ay") String academicYear);
+
+        @Query("SELECT sf FROM StudentFee sf WHERE sf.student.department = :dept " +
+                        "AND sf.student.semester = :sem AND sf.student.section = :sec " +
+                        "AND sf.academicYear = :ay AND sf.paymentStatus IN ('PENDING', 'OVERDUE', 'PARTIALLY_PAID')")
+        List<StudentFee> findPendingByClassSection(
+                        @Param("dept") String department,
+                        @Param("sem") String semester,
+                        @Param("sec") String section,
+                        @Param("ay") String academicYear);
 }

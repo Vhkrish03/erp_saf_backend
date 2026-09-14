@@ -42,6 +42,18 @@ public class AccountantController {
     }
 
     /**
+     * Retrieve pending/all fees based on filters
+     */
+    @GetMapping("/fees/filter")
+    public ResponseEntity<List<StudentFeeDto>> getFeesByFilter(
+            @RequestParam String department,
+            @RequestParam String academicYear,
+            @RequestParam String semester,
+            @RequestParam(required = false, defaultValue = "false") boolean pendingOnly) {
+        return ResponseEntity.ok(accountantService.getFeesByFilter(department, academicYear, semester, pendingOnly));
+    }
+
+    /**
      * Record a Payment externally received by the accountant.
      */
     @PostMapping("/payments")
