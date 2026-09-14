@@ -80,4 +80,21 @@ public class ManagementController {
     public ResponseEntity<java.util.List<DepartmentPerformanceDTO>> getAllDepartmentPerformances() {
         return ResponseEntity.ok(managementService.getAllDepartmentPerformances());
     }
+
+    @GetMapping("/fee-decisions")
+    public ResponseEntity<java.util.List<FeeDecisionDto>> getAllFeeDecisions() {
+        return ResponseEntity.ok(managementService.getAllFeeDecisions());
+    }
+
+    @PostMapping("/fee-decisions")
+    public ResponseEntity<FeeDecisionDto> createFeeDecision(@RequestBody FeeDecisionDto dto) {
+        return ResponseEntity.ok(managementService.createFeeDecision(dto));
+    }
+
+    @PutMapping("/fee-decisions/{id}/status")
+    public ResponseEntity<FeeDecisionDto> updateFeeDecisionStatus(
+            @PathVariable Long id, 
+            @RequestParam String status) {
+        return ResponseEntity.ok(managementService.updateFeeDecisionStatus(id, status));
+    }
 }

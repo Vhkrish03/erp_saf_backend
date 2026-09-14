@@ -15,6 +15,9 @@ import erp_backend.repository.SemesterResultRepository;
 import erp_backend.attendance.repository.AttendanceRecordRepository;
 import erp_backend.fees.repository.StudentFeeRepository;
 import erp_backend.fees.repository.FeePaymentRepository;
+import erp_backend.management.repository.FeeDecisionRepository;
+import erp_backend.management.entity.FeeDecision;
+import erp_backend.management.entity.FeeDecisionComponent;
 
 import erp_backend.entity.Student;
 import erp_backend.Teacher.entity.Teacher;
@@ -47,6 +50,7 @@ public class ManagementService {
     private final NoticeRepository noticeRepository;
     private final FacultyApprovalRequestRepository facultyApprovalRequestRepository;
     private final HostelRepository hostelRepository;
+    private final FeeDecisionRepository feeDecisionRepository;
 
     public ManagementService(StudentRepository studentRepository,
             TeacherRepository teacherRepository,
@@ -59,7 +63,8 @@ public class ManagementService {
             BusRepository busRepository,
             NoticeRepository noticeRepository,
             FacultyApprovalRequestRepository facultyApprovalRequestRepository,
-            HostelRepository hostelRepository) {
+            HostelRepository hostelRepository,
+            FeeDecisionRepository feeDecisionRepository) {
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
         this.academicYearRepository = academicYearRepository;
@@ -72,6 +77,7 @@ public class ManagementService {
         this.noticeRepository = noticeRepository;
         this.facultyApprovalRequestRepository = facultyApprovalRequestRepository;
         this.hostelRepository = hostelRepository;
+        this.feeDecisionRepository = feeDecisionRepository;
     }
 
     public InstitutionOverviewDTO getInstitutionOverview() {
@@ -338,5 +344,45 @@ public class ManagementService {
             list.add(dto);
         }
         return list;
+    }
+
+    public List<FeeDecisionDto> getAllFeeDecisions() {
+        return feeDecisionRepository.findAll().stream()
+                .map(FeeDecisionDto::new)
+                .collect(Collectors.toList());
+    }
+
+    public FeeDecisionDto createFeeDecision(FeeDecisionDto dto) {
+        FeeDecision decision = new FeeDecision();
+        decision.setAcademicYear(dto.getAcademicYear());
+        decision.setDepartment(dto.getDepartment());
+        decision.setProgram(dto.getProgram());
+        decision.setStudentYear(dto.getStudentYear());
+        decision.setSemester(dto.getSemester());
+        decision.setCreatedBy(dto.getCreatedBy());
+
+        if (dto.getComponents() != null) {
+            List<FeeDecisionComponent> components = dto.getComponents().stream().map(cDto -> {
+                FeeDecisionComponent component = new FeeDecisionComponent();
+                component.setName(cDto.getName());
+                component.setAmount(cDto.getAmount());
+                component.setApplicableCondition(cDto.getApplicableCondition());
+                return component;
+            }).collect(Collectors.toList());
+            decision.setComponents(components);
+        }
+
+        FeeDecision saved = feeDecisionRepository.save(decision);
+        return new FeeDecisionDto(saved);
+    }
+
+    public FeeDecisionDto updateFeeDecisionStatus(Long id, String status) {
+        Optional<FeeDecision> opt = feeDecisionRepository.findById(id);
+        if (opt.isPresent()) {
+            FeeDecision decision = opt.get();
+            decision.setStatus(status);
+            return new FeeDecisionDto(feeDecisionRepository.save(decision));
+        }
+        throw new RuntimeException("Fee Decision not found");
     }
 }
