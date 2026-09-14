@@ -36,7 +36,7 @@ public class StudentFee {
     @Column(name = "total_fee", nullable = false)
     private double totalFee;
 
-    @OneToMany(mappedBy = "studentFee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "studentFee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<StudentFeeComponent> feeComponents = new ArrayList<>();
 
     @Column(name = "amount_paid")

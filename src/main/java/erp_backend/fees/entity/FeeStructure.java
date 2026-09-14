@@ -28,7 +28,7 @@ public class FeeStructure {
 
     private String section; // null = applies to all sections
 
-    @OneToMany(mappedBy = "feeStructure", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "feeStructure", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<FeeComponent> feeComponents = new ArrayList<>();
 
     @Column(name = "total_amount", nullable = false)

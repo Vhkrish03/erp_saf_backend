@@ -8,6 +8,7 @@ import erp_backend.fees.repository.FeeStructureRepository;
 import erp_backend.fees.repository.StudentFeeRepository;
 import erp_backend.finance_department.dto.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,7 +33,7 @@ public class FinanceDepartmentService {
         this.feeStructureRepository = feeStructureRepository;
         this.feeService = feeService;
     }
-
+    @Transactional(readOnly = true)
     public FinanceDashboardDto getDashboardData() {
         FinanceDashboardDto dto = new FinanceDashboardDto();
         List<StudentFee> allFees = studentFeeRepository.findAll();
