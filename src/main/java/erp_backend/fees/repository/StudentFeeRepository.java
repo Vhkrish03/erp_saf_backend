@@ -11,6 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
+    @Query("SELECT sf FROM StudentFee sf JOIN FETCH sf.student")
+    List<StudentFee> findAllWithStudent();
+
     List<StudentFee> findByStudentId(String studentId);
 
     Optional<StudentFee> findByStudentIdAndFeeStructureId(String studentId, Long feeStructureId);

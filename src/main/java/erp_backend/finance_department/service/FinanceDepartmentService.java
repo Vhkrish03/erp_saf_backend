@@ -36,7 +36,7 @@ public class FinanceDepartmentService {
     @Transactional(readOnly = true)
     public FinanceDashboardDto getDashboardData() {
         FinanceDashboardDto dto = new FinanceDashboardDto();
-        List<StudentFee> allFees = studentFeeRepository.findAll();
+        List<StudentFee> allFees = studentFeeRepository.findAllWithStudent();
         List<FeePayment> allPayments = feePaymentRepository.findAll();
         List<FeeStructure> allStructures = feeStructureRepository.findAll();
 
@@ -74,9 +74,6 @@ public class FinanceDepartmentService {
 
             // Category breakdown
             String cat = "Total Fee";
-            if (fee.getFeeComponents() != null && !fee.getFeeComponents().isEmpty()) {
-                cat = fee.getFeeComponents().get(0).getName();
-            }
             feeBreakdownExpected.merge(cat, total, BigDecimal::add);
             feeBreakdownCollected.merge(cat, amtPaid, BigDecimal::add);
             feeBreakdownPending.merge(cat, bal, BigDecimal::add);
