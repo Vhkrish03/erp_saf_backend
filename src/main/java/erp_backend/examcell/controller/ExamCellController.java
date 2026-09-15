@@ -387,6 +387,11 @@ public class ExamCellController {
         return ResponseEntity.ok(examinationService.getAllExaminations());
     }
 
+    @GetMapping("/departments")
+    public ResponseEntity<List<String>> getDepartments() {
+        return ResponseEntity.ok(examinationService.getDistinctDepartments());
+    }
+
     @GetMapping("/examinations/{id}")
     public ResponseEntity<?> getExamination(@PathVariable Long id) {
         Examination exam = examinationService.getExamination(id);

@@ -68,6 +68,10 @@ public class ExaminationService {
         return examinationRepository.findById(id).orElse(null);
     }
 
+    public List<String> getDistinctDepartments() {
+        return studentRepository.findDistinctDepartments();
+    }
+
     // ─── Exam Registration & Eligibility ────────────────────────────────────────
 
     public List<ExamRegistration> getRegistrationsForExam(Long examId) {

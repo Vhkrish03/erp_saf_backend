@@ -9,6 +9,9 @@ import erp_backend.entity.Student;
 
 public interface StudentRepository extends JpaRepository<Student, String> {
 
+        @Query("SELECT DISTINCT s.department FROM Student s WHERE s.department IS NOT NULL")
+        List<String> findDistinctDepartments();
+
         List<Student> findByDepartment(String department);
 
         List<Student> findBySemester(String semester);
