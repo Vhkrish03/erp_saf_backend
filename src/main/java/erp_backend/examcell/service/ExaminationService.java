@@ -18,15 +18,18 @@ public class ExaminationService {
     private final ExaminationRepository examinationRepository;
     private final ExamRegistrationRepository registrationRepository;
     private final erp_backend.examcell.repository.ExamTimetableRepository timetableRepository;
+    private final erp_backend.examcell.repository.ExamAttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
 
     public ExaminationService(ExaminationRepository examinationRepository,
             ExamRegistrationRepository registrationRepository,
             erp_backend.examcell.repository.ExamTimetableRepository timetableRepository,
+            erp_backend.examcell.repository.ExamAttendanceRepository attendanceRepository,
             StudentRepository studentRepository) {
         this.examinationRepository = examinationRepository;
         this.registrationRepository = registrationRepository;
         this.timetableRepository = timetableRepository;
+        this.attendanceRepository = attendanceRepository;
         this.studentRepository = studentRepository;
     }
 
@@ -158,8 +161,69 @@ public class ExaminationService {
         hallTicket.put("semester", exam.getSemesterName());
         hallTicket.put("examination", exam.getExamName());
         hallTicket.put("session", exam.getExamSession());
-        hallTicket.put("timetable", timetable); // List of exams configured
+        hallTicket.put("timetable", timetable);
 
         return hallTicket;
+    }
+
+    // ─── Examination Attendance ───────────────────────────────────────────────
+
+    public List<erp_backend.examcell.entity.ExamAttendance> getAttendanceForTimetable(Long timetableId) {
+        erp_backend.examcell.entity.ExamTimetable timetable = timetableRepository.findById(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found"));
+
+        List<ExamRegistration> registered = registrationRepository
+                .findByExaminationId(timetable.getExamination().getId());
+
+        for (ExamRegistration reg : registered) {
+            if ("REGISTERED".equals(reg.getStatus())) {
+                Optional<erp_backend.examcell.entity.ExamAttendance> existing = attendanceRepository
+                        .findByExamTimetableIdAndStudentId(timetableId, reg.getStudentId());
+                if (existing.isEmpty()) {
+                    erp_backend.examcell.entity.ExamAttendance attendance = new erp_backend.examcell.entity.ExamAttendance();
+                    attendance.setExamTimetable(timetable);
+                    attendance.setStudentId(reg.getStudentId());
+                    attendance.setStatus("PRESENT"); // default
+                    attendanceRepository.save(attendance);
+                }
+            }
+        }
+        return attendanceRepository.findByExamTimetableId(timetableId);
+    }
+
+    public List<java.util.Map<String, Object>> getAttendanceForTimetableMapped(Long timetableId) {
+        List<erp_backend.examcell.entity.ExamAttendance> atts = getAttendanceForTimetable(timetableId);
+        List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+
+        erp_backend.examcell.entity.ExamTimetable timetable = timetableRepository.findById(timetableId).get();
+        List<ExamRegistration> regs = registrationRepository.findByExaminationId(timetable.getExamination().getId());
+
+        for (erp_backend.examcell.entity.ExamAttendance att : atts) {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", att.getId());
+            map.put("studentId", att.getStudentId());
+            map.put("status", att.getStatus());
+            map.put("remarks", att.getRemarks());
+
+            ExamRegistration r = regs.stream().filter(x -> x.getStudentId().equals(att.getStudentId())).findFirst()
+                    .orElse(null);
+            if (r != null) {
+                map.put("studentName", r.getStudentName());
+                map.put("registerNumber", r.getRegisterNumber());
+            }
+            result.add(map);
+        }
+        return result;
+    }
+
+    public void markAttendance(Long attendanceId, String status, String remarks, String performedBy) {
+        erp_backend.examcell.entity.ExamAttendance att = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new IllegalArgumentException("Attendance record not found"));
+        att.setStatus(status);
+        if (remarks != null)
+            att.setRemarks(remarks);
+        att.setMarkedBy(performedBy);
+        att.setMarkedAt(LocalDateTime.now());
+        attendanceRepository.save(att);
     }
 }

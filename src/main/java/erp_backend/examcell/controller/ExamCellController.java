@@ -452,4 +452,29 @@ public class ExamCellController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // ── Examination Attendance ───────────────────────────────────────────────
+
+    @GetMapping("/timetable/{id}/attendance")
+    public ResponseEntity<?> getTimetableAttendance(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(examinationService.getAttendanceForTimetableMapped(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/attendance/{id}/mark")
+    public ResponseEntity<?> markAttendance(
+            @PathVariable Long id,
+            @RequestParam String status,
+            @RequestParam(required = false) String remarks,
+            @RequestParam String performedBy) {
+        try {
+            examinationService.markAttendance(id, status, remarks, performedBy);
+            return ResponseEntity.ok(Map.of("message", "Attendance marked seamlessly."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
