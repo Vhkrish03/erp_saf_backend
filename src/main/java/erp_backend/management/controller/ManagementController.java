@@ -17,6 +17,19 @@ public class ManagementController {
         this.managementService = managementService;
     }
 
+    @GetMapping("/dashboard")
+    public ResponseEntity<ManagementDashboardDataDTO> getDashboardData(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String academicYear,
+            @RequestParam(required = false) String semester) {
+        return ResponseEntity.ok(managementService.getDashboardData(department, academicYear, semester));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<java.util.List<SearchResultDTO>> globalSearch(@RequestParam String q) {
+        return ResponseEntity.ok(managementService.globalSearch(q));
+    }
+
     @GetMapping("/institution-overview")
     public ResponseEntity<InstitutionOverviewDTO> getInstitutionOverview() {
         return ResponseEntity.ok(managementService.getInstitutionOverview());
@@ -93,7 +106,7 @@ public class ManagementController {
 
     @PutMapping("/fee-decisions/{id}/status")
     public ResponseEntity<FeeDecisionDto> updateFeeDecisionStatus(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(managementService.updateFeeDecisionStatus(id, status));
     }

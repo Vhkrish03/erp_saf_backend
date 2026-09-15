@@ -80,6 +80,22 @@ public class ManagementService {
         this.feeDecisionRepository = feeDecisionRepository;
     }
 
+    public ManagementDashboardDataDTO getDashboardData(String department, String academicYear, String semester) {
+        ManagementDashboardDataDTO dto = new ManagementDashboardDataDTO();
+
+        dto.setInstitutionOverview(getInstitutionOverview());
+        dto.setStudentOverview(getStudentOverview(department, null, semester)); // For students, semester filter applies
+        dto.setStaffOverview(getStaffOverview(department));
+        dto.setAcademicPerformance(getAcademicOverview(department, academicYear, semester));
+        dto.setAttendanceOverview(getAttendanceOverview(department, academicYear, semester));
+        dto.setExaminationOverview(getExaminationOverview(department, academicYear, semester));
+        dto.setFeeOverview(getFinancialOverview(department, academicYear, semester));
+        dto.setActionCenter(getAdministrationOverview(department));
+        dto.setDepartmentAttendance(getAllDepartmentPerformances(academicYear, semester));
+
+        return dto;
+    }
+
     public InstitutionOverviewDTO getInstitutionOverview() {
         InstitutionOverviewDTO dto = new InstitutionOverviewDTO();
         dto.setTotalStudents(studentRepository.count());
@@ -148,12 +164,22 @@ public class ManagementService {
         return dto;
     }
 
-    public AcademicOverviewDTO getAcademicOverview(String department) {
+    public AcademicOverviewDTO getAcademicOverview(String department, String academicYear, String semester) {
         List<Assessment> assessments = assessmentRepository.findAll();
-        if (department != null && !department.isEmpty()) {
-            assessments = assessments.stream().filter(a -> department.equals(a.getDepartment()))
-                    .collect(Collectors.toList());
-        }
+        assessments = assessments.stream().filter(a -> {
+            boolean matches = true;
+            if (department != null && !department.isEmpty()) {
+                matches = matches && department.equals(a.getDepartment());
+            }
+            if (academicYear != null && !academicYear.isEmpty()) {
+                matches = matches && academicYear.equals(a.getAcademicYear());
+            }
+            if (semester != null && !semester.isEmpty()) {
+                matches = matches && semester.equals(a.getSemester());
+            }
+            return matches;
+        }).collect(Collectors.toList());
+
         AcademicOverviewDTO dto = new AcademicOverviewDTO();
         dto.setTotalAssessments(assessments.size());
 
@@ -165,13 +191,25 @@ public class ManagementService {
         return dto;
     }
 
-    public AttendanceOverviewDTO getAttendanceOverview(String department) {
+    public AttendanceOverviewDTO getAttendanceOverview(String department, String academicYear, String semester) {
         List<AttendanceRecord> records = attendanceRecordRepository.findAll();
-        if (department != null && !department.isEmpty()) {
-            records = records.stream()
-                    .filter(r -> r.getStudent() != null && department.equals(r.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
-        }
+        records = records.stream().filter(r -> {
+            boolean matches = true;
+            if (department != null && !department.isEmpty()) {
+                matches = matches && r.getStudent() != null && department.equals(r.getStudent().getDepartment());
+            }
+            if (academicYear != null && !academicYear.isEmpty()) {
+                matches = matches && r.getAttendanceSession() != null
+                        && academicYear.equals(r.getAttendanceSession().getAcademicYear());
+            }
+            if (semester != null && !semester.isEmpty()) {
+                matches = matches && r.getAttendanceSession() != null
+                        && (semester.equals(r.getAttendanceSession().getSemester())
+                                || semester.equals(r.getStudent().getSemester()));
+            }
+            return matches;
+        }).collect(Collectors.toList());
+
         AttendanceOverviewDTO dto = new AttendanceOverviewDTO();
         dto.setTotalRecords(records.size());
         long present = records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
@@ -185,13 +223,22 @@ public class ManagementService {
         return dto;
     }
 
-    public ExaminationOverviewDTO getExaminationOverview(String department) {
+    public ExaminationOverviewDTO getExaminationOverview(String department, String academicYear, String semester) {
         List<SemesterResult> results = semesterResultRepository.findAll();
-        if (department != null && !department.isEmpty()) {
-            results = results.stream()
-                    .filter(r -> r.getStudent() != null && department.equals(r.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
-        }
+        results = results.stream().filter(r -> {
+            boolean matches = true;
+            if (department != null && !department.isEmpty()) {
+                matches = matches && r.getStudent() != null && department.equals(r.getStudent().getDepartment());
+            }
+            if (academicYear != null && !academicYear.isEmpty()) {
+                matches = matches && academicYear.equals(r.getAcademicYear());
+            }
+            if (semester != null && !semester.isEmpty()) {
+                matches = matches && r.getSemesterName() != null && r.getSemesterName().equals(semester);
+            }
+            return matches;
+        }).collect(Collectors.toList());
+
         ExaminationOverviewDTO dto = new ExaminationOverviewDTO();
         long published = results.stream().filter(r -> "PUBLISHED".equals(r.getStatus())).count();
         dto.setTotalPublishedResults(published);
@@ -210,13 +257,21 @@ public class ManagementService {
         return dto;
     }
 
-    public FinancialOverviewDTO getFinancialOverview(String department) {
+    public FinancialOverviewDTO getFinancialOverview(String department, String academicYear, String semester) {
         List<StudentFee> fees = studentFeeRepository.findAll();
-        if (department != null && !department.isEmpty()) {
-            fees = fees.stream()
-                    .filter(f -> f.getStudent() != null && department.equals(f.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
-        }
+        fees = fees.stream().filter(f -> {
+            boolean matches = true;
+            if (department != null && !department.isEmpty()) {
+                matches = matches && f.getStudent() != null && department.equals(f.getStudent().getDepartment());
+            }
+            if (academicYear != null && !academicYear.isEmpty()) {
+                matches = matches && academicYear.equals(f.getAcademicYear());
+            }
+            if (semester != null && !semester.isEmpty()) {
+                matches = matches && semester.equals(f.getSemester());
+            }
+            return matches;
+        }).collect(Collectors.toList());
 
         FinancialOverviewDTO dto = new FinancialOverviewDTO();
         BigDecimal demand = BigDecimal.ZERO;
@@ -246,7 +301,6 @@ public class ManagementService {
         if (department != null && !department.isEmpty()) {
             // Notice entity handles department filtering differently or might not have
             // simple getDepartment()
-            // Kept simple for high-level management view
             approvals = approvals.stream().filter(a -> department.equals(a.getDepartment()))
                     .collect(Collectors.toList());
         }
@@ -280,12 +334,11 @@ public class ManagementService {
         return dto;
     }
 
-    public List<DepartmentPerformanceDTO> getAllDepartmentPerformances() {
+    public List<DepartmentPerformanceDTO> getAllDepartmentPerformances(String academicYear, String semester) {
         List<String> departments = Arrays.asList("CSE", "AIDS", "BIOTECH", "ECE", "EEE", "BME", "CIVIL", "MECH", "S&H");
         List<DepartmentPerformanceDTO> list = new ArrayList<>();
 
         // PERFORMANCE EFFICIENCY: Retrieve DB dump ONCE to avoid N+1 / 36 repeated
-        // massive queries inside loop.
         List<Student> allStudents = studentRepository.findAll();
         List<AttendanceRecord> allRecords = attendanceRecordRepository.findAll();
         List<SemesterResult> allResults = semesterResultRepository.findAll();
@@ -300,9 +353,17 @@ public class ManagementService {
             dto.setTotalStudents(students);
 
             // Attendance
-            List<AttendanceRecord> records = allRecords.stream()
-                    .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
+            List<AttendanceRecord> records = allRecords.stream().filter(r -> {
+                boolean matches = r.getStudent() != null && dept.equals(r.getStudent().getDepartment());
+                if (academicYear != null && !academicYear.isEmpty()) {
+                    matches = matches && r.getAttendanceSession() != null
+                            && academicYear.equals(r.getAttendanceSession().getAcademicYear());
+                }
+                if (semester != null && !semester.isEmpty()) {
+                    matches = matches && r.getStudent() != null && semester.equals(r.getStudent().getSemester());
+                }
+                return matches;
+            }).collect(Collectors.toList());
             if (!records.isEmpty()) {
                 long present = records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
                 dto.setAttendancePercentage((double) present / records.size() * 100);
@@ -311,9 +372,16 @@ public class ManagementService {
             }
 
             // Pass Rate
-            List<SemesterResult> results = allResults.stream()
-                    .filter(r -> r.getStudent() != null && dept.equals(r.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
+            List<SemesterResult> results = allResults.stream().filter(r -> {
+                boolean matches = r.getStudent() != null && dept.equals(r.getStudent().getDepartment());
+                if (academicYear != null && !academicYear.isEmpty()) {
+                    matches = matches && academicYear.equals(r.getAcademicYear());
+                }
+                if (semester != null && !semester.isEmpty()) {
+                    matches = matches && r.getSemesterName() != null && r.getSemesterName().equals(semester);
+                }
+                return matches;
+            }).collect(Collectors.toList());
             if (!results.isEmpty()) {
                 long passed = results.stream().filter(r -> r.getSgpa() >= 5.0).count();
                 dto.setPassPercentage((double) passed / results.size() * 100);
@@ -322,9 +390,16 @@ public class ManagementService {
             }
 
             // Fee Collection
-            List<StudentFee> fees = allFees.stream()
-                    .filter(f -> f.getStudent() != null && dept.equals(f.getStudent().getDepartment()))
-                    .collect(Collectors.toList());
+            List<StudentFee> fees = allFees.stream().filter(f -> {
+                boolean matches = f.getStudent() != null && dept.equals(f.getStudent().getDepartment());
+                if (academicYear != null && !academicYear.isEmpty()) {
+                    matches = matches && academicYear.equals(f.getAcademicYear());
+                }
+                if (semester != null && !semester.isEmpty()) {
+                    matches = matches && semester.equals(f.getSemester());
+                }
+                return matches;
+            }).collect(Collectors.toList());
             if (!fees.isEmpty()) {
                 BigDecimal demand = BigDecimal.ZERO;
                 BigDecimal collected = BigDecimal.ZERO;
@@ -344,6 +419,27 @@ public class ManagementService {
             list.add(dto);
         }
         return list;
+    }
+
+    // kept for legacy controller endpoints compatibility if other modules use them
+    public List<DepartmentPerformanceDTO> getAllDepartmentPerformances() {
+        return getAllDepartmentPerformances(null, null);
+    }
+
+    public AcademicOverviewDTO getAcademicOverview(String department) {
+        return getAcademicOverview(department, null, null);
+    }
+
+    public AttendanceOverviewDTO getAttendanceOverview(String department) {
+        return getAttendanceOverview(department, null, null);
+    }
+
+    public ExaminationOverviewDTO getExaminationOverview(String department) {
+        return getExaminationOverview(department, null, null);
+    }
+
+    public FinancialOverviewDTO getFinancialOverview(String department) {
+        return getFinancialOverview(department, null, null);
     }
 
     public List<FeeDecisionDto> getAllFeeDecisions() {
@@ -374,6 +470,33 @@ public class ManagementService {
 
         FeeDecision saved = feeDecisionRepository.save(decision);
         return new FeeDecisionDto(saved);
+    }
+
+    public List<SearchResultDTO> globalSearch(String query) {
+        List<SearchResultDTO> results = new ArrayList<>();
+        if (query == null || query.trim().isEmpty())
+            return results;
+        String q = query.toLowerCase();
+
+        for (Student s : studentRepository.findAll()) {
+            if ((s.getName() != null && s.getName().toLowerCase().contains(q)) ||
+                    (s.getRollNumber() != null && s.getRollNumber().toLowerCase().contains(q))) {
+                results.add(new SearchResultDTO("Student", s.getName(), s.getRollNumber()));
+            }
+        }
+        for (Teacher t : teacherRepository.findAll()) {
+            if ((t.getName() != null && t.getName().toLowerCase().contains(q)) ||
+                    (t.getEmployeeId() != null && t.getEmployeeId().toLowerCase().contains(q))) {
+                results.add(new SearchResultDTO("Teacher", t.getName(), t.getEmployeeId()));
+            }
+        }
+        for (StudentFee f : studentFeeRepository.findAll()) {
+            if (f.getId() != null && f.getId().toString().contains(q)) {
+                results.add(new SearchResultDTO("Fee", "Fee ID: " + f.getId(),
+                        "Student: " + (f.getStudent() != null ? f.getStudent().getName() : "")));
+            }
+        }
+        return results.size() > 20 ? results.subList(0, 20) : results;
     }
 
     public FeeDecisionDto updateFeeDecisionStatus(Long id, String status) {
