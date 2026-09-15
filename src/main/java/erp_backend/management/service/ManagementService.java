@@ -203,9 +203,7 @@ public class ManagementService {
                         && academicYear.equals(r.getAttendanceSession().getAcademicYear());
             }
             if (semester != null && !semester.isEmpty()) {
-                matches = matches && r.getAttendanceSession() != null
-                        && (semester.equals(r.getAttendanceSession().getSemester())
-                                || semester.equals(r.getStudent().getSemester()));
+                matches = matches && r.getStudent() != null && semester.equals(r.getStudent().getSemester());
             }
             return matches;
         }).collect(Collectors.toList());
