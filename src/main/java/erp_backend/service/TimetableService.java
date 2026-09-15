@@ -52,4 +52,8 @@ public class TimetableService {
     public List<Timetable> getTeacherTimetable(String employeeId) {
         return repository.findByEmployeeId(employeeId);
     }
+
+    public Timetable saveTimetable(Timetable timetable) {
+        return repository.save(timetable);
+    }
 }

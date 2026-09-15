@@ -50,6 +50,11 @@ public class TimetableController {
         return service.getTeacherTimetable(employeeId);
     }
 
+    @PostMapping
+    public Timetable createOrUpdate(@RequestBody Timetable timetable) {
+        return service.saveTimetable(timetable);
+    }
+
     @GetMapping("/test01")
     public Timetable test() {
 
