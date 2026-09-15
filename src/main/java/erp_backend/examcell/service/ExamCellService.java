@@ -248,6 +248,21 @@ public class ExamCellService {
                 oldStatus, "DELETED", performedBy, role, "Deleted entire semester result"));
     }
 
+    /**
+     * Delete an entire batch of results.
+     */
+    @Transactional
+    public void deleteBatch(String department, String semesterName, String academicYear, String examSession,
+            String performedBy, String role) {
+        List<ExamCellResult> results = resultRepository.findByDepartmentAndSemesterNameAndAcademicYear(department,
+                semesterName, academicYear);
+        for (ExamCellResult r : results) {
+            if (examSession.equals(r.getExamSession())) {
+                deleteResult(r.getId(), performedBy, role);
+            }
+        }
+    }
+
     // ── Query Methods ─────────────────────────────────────────────────────────
 
     /** Student access: only PUBLISHED results */

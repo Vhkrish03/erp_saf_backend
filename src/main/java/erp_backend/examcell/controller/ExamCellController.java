@@ -165,6 +165,27 @@ public class ExamCellController {
         }
     }
 
+    /**
+     * DELETE /api/exam-cell/results/batch
+     * Delete an entire batch of results.
+     */
+    @DeleteMapping("/results/batch")
+    public ResponseEntity<?> deleteBatch(
+            @RequestParam String department,
+            @RequestParam String semesterName,
+            @RequestParam String academicYear,
+            @RequestParam String examSession,
+            @RequestParam String performedBy,
+            @RequestParam(defaultValue = "EXAM_CELL") String role) {
+        try {
+            examCellService.deleteBatch(department, semesterName, academicYear, examSession, performedBy, role);
+            return ResponseEntity.ok(Map.of("message", "Batch deleted successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Exam Cell: Query Endpoints ────────────────────────────────────────────
 
     /** GET all results for a student (any status) — Exam Cell / Admin view */
