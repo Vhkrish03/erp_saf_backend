@@ -18,6 +18,9 @@ public class Examination {
     @Column(nullable = false)
     private String semesterName;
 
+    @Column(name = "\"year\"")
+    private String year;
+
     @Column(nullable = false)
     private String department;
 
@@ -62,6 +65,14 @@ public class Examination {
 
     public void setSemesterName(String semesterName) {
         this.semesterName = semesterName;
+    }
+
+    public String getYear() {
+        return year;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
     }
 
     public String getDepartment() {

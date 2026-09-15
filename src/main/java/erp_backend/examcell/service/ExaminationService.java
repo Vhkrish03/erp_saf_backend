@@ -49,6 +49,7 @@ public class ExaminationService {
 
         existing.setAcademicYear(updated.getAcademicYear());
         existing.setSemesterName(updated.getSemesterName());
+        existing.setYear(updated.getYear());
         existing.setDepartment(updated.getDepartment());
         existing.setExamType(updated.getExamType());
         existing.setExamName(updated.getExamName());
