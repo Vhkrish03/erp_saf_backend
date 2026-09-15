@@ -2,7 +2,10 @@ package erp_backend.examcell.controller;
 
 import erp_backend.examcell.entity.ExamCellResult;
 import erp_backend.examcell.entity.ExamCellResultAudit;
+import erp_backend.examcell.entity.Examination;
+import erp_backend.examcell.entity.ExamRegistration;
 import erp_backend.examcell.service.ExamCellService;
+import erp_backend.examcell.service.ExaminationService;
 import erp_backend.entity.Student;
 import erp_backend.repository.StudentRepository;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +28,14 @@ import java.util.Map;
 public class ExamCellController {
 
     private final ExamCellService examCellService;
+    private final ExaminationService examinationService;
     private final StudentRepository studentRepository;
 
     public ExamCellController(ExamCellService examCellService,
+            ExaminationService examinationService,
             StudentRepository studentRepository) {
         this.examCellService = examCellService;
+        this.examinationService = examinationService;
         this.studentRepository = studentRepository;
     }
 
@@ -80,17 +86,18 @@ public class ExamCellController {
     // ── Workflow Transitions ──────────────────────────────────────────────────
 
     /**
-     * POST /api/exam-cell/results/{id}/verify
-     * Exam Cell internally verifies the entered data. DRAFT → VERIFIED.
+     * POST /api/exam-cell/results/{id}/submit
+     * Exam Cell finishes entry and submits for CoE Approval. DRAFT/REJECTED →
+     * SUBMITTED.
      */
-    @PostMapping("/results/{id}/verify")
-    public ResponseEntity<?> verifyResult(
+    @PostMapping("/results/{id}/submit")
+    public ResponseEntity<?> submitResult(
             @PathVariable Long id,
             @RequestParam String performedBy,
             @RequestParam(defaultValue = "EXAM_CELL") String role,
             @RequestParam(required = false) String comments) {
         try {
-            return ResponseEntity.ok(examCellService.verifyResult(id, performedBy, role, comments));
+            return ResponseEntity.ok(examCellService.submitResult(id, performedBy, role, comments));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -98,13 +105,13 @@ public class ExamCellController {
 
     /**
      * POST /api/exam-cell/results/{id}/approve
-     * Dean / authorized authority approves. VERIFIED → APPROVED.
+     * CoE approves the result. SUBMITTED → APPROVED.
      */
     @PostMapping("/results/{id}/approve")
     public ResponseEntity<?> approveResult(
             @PathVariable Long id,
             @RequestParam String performedBy,
-            @RequestParam(defaultValue = "DEAN") String role,
+            @RequestParam(defaultValue = "COE") String role,
             @RequestParam(required = false) String comments) {
         try {
             return ResponseEntity.ok(examCellService.approveResult(id, performedBy, role, comments));
@@ -131,17 +138,17 @@ public class ExamCellController {
     }
 
     /**
-     * POST /api/exam-cell/results/{id}/return
-     * Return a result back to DRAFT for correction.
+     * POST /api/exam-cell/results/{id}/reject
+     * CoE rejects the result. SUBMITTED → REJECTED.
      */
-    @PostMapping("/results/{id}/return")
-    public ResponseEntity<?> returnForCorrection(
+    @PostMapping("/results/{id}/reject")
+    public ResponseEntity<?> rejectResult(
             @PathVariable Long id,
             @RequestParam String performedBy,
-            @RequestParam(defaultValue = "EXAM_CELL") String role,
+            @RequestParam(defaultValue = "COE") String role,
             @RequestParam(required = false) String reason) {
         try {
-            return ResponseEntity.ok(examCellService.returnForCorrection(id, performedBy, role, reason));
+            return ResponseEntity.ok(examCellService.rejectResult(id, performedBy, role, reason));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -347,5 +354,102 @@ public class ExamCellController {
         return examCellService.getPublishedResultForStudentAndSemester(studentId, semester)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Examination Planning & Management ─────────────────────────────────────
+
+    @PostMapping("/examinations")
+    public ResponseEntity<?> createExamination(
+            @RequestBody Examination examination,
+            @RequestParam String performedBy,
+            @RequestParam(defaultValue = "EXAM_CELL") String role) {
+        try {
+            return ResponseEntity.ok(examinationService.createExamination(examination, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/examinations/{id}")
+    public ResponseEntity<?> updateExamination(
+            @PathVariable Long id,
+            @RequestBody Examination examination,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.updateExamination(id, examination, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/examinations")
+    public ResponseEntity<List<Examination>> getAllExaminations() {
+        return ResponseEntity.ok(examinationService.getAllExaminations());
+    }
+
+    @GetMapping("/examinations/{id}")
+    public ResponseEntity<?> getExamination(@PathVariable Long id) {
+        Examination exam = examinationService.getExamination(id);
+        if (exam != null)
+            return ResponseEntity.ok(exam);
+        return ResponseEntity.notFound().build();
+    }
+
+    // ── Examination Registration & Eligibility ───────────────────────────────
+
+    @GetMapping("/examinations/{id}/registrations")
+    public ResponseEntity<List<ExamRegistration>> getRegistrations(@PathVariable Long id) {
+        return ResponseEntity.ok(examinationService.getRegistrationsForExam(id));
+    }
+
+    @PostMapping("/examinations/{id}/generate-eligibility")
+    public ResponseEntity<?> generateEligibilityList(@PathVariable Long id) {
+        try {
+            examinationService.generateEligibilityList(id);
+            return ResponseEntity.ok(Map.of("message", "Eligibility list generated."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/registrations/{id}/status")
+    public ResponseEntity<?> updateRegistrationStatus(
+            @PathVariable Long id,
+            @RequestParam String status,
+            @RequestParam boolean feePaid) {
+        try {
+            examinationService.updateRegistrationStatus(id, status, feePaid);
+            return ResponseEntity.ok(Map.of("message", "Registration updated."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── Examination Timetable ────────────────────────────────────────────────
+
+    @GetMapping("/examinations/{id}/timetable")
+    public ResponseEntity<List<erp_backend.examcell.entity.ExamTimetable>> getTimetable(@PathVariable Long id) {
+        return ResponseEntity.ok(examinationService.getTimetableForExam(id));
+    }
+
+    @PostMapping("/examinations/{id}/timetable")
+    public ResponseEntity<?> addTimetable(@PathVariable Long id,
+            @RequestBody erp_backend.examcell.entity.ExamTimetable timetable) {
+        try {
+            return ResponseEntity.ok(examinationService.addTimetable(id, timetable));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── Hall Ticket ──────────────────────────────────────────────────────────
+
+    @GetMapping("/registrations/{id}/hall-ticket")
+    public ResponseEntity<?> getHallTicket(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(examinationService.generateHallTicket(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

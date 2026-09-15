@@ -84,6 +84,15 @@ public class ExamCellResult {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(name = "rejected_by", length = 50)
+    private String rejectedBy;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
@@ -251,6 +260,30 @@ public class ExamCellResult {
 
     public void setApprovedAt(LocalDateTime approvedAt) {
         this.approvedAt = approvedAt;
+    }
+
+    public String getRejectedBy() {
+        return rejectedBy;
+    }
+
+    public void setRejectedBy(String rejectedBy) {
+        this.rejectedBy = rejectedBy;
+    }
+
+    public LocalDateTime getRejectedAt() {
+        return rejectedAt;
+    }
+
+    public void setRejectedAt(LocalDateTime rejectedAt) {
+        this.rejectedAt = rejectedAt;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
     }
 
     public LocalDateTime getPublishedAt() {

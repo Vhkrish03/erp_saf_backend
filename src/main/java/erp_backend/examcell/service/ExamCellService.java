@@ -59,6 +59,10 @@ public class ExamCellService {
                 throw new IllegalStateException(
                         "Result is already PUBLISHED. Cannot overwrite published official results.");
             }
+            if ("SUBMITTED".equalsIgnoreCase(result.getStatus()) || "APPROVED".equalsIgnoreCase(result.getStatus())) {
+                throw new IllegalStateException(
+                        "Result is currently " + result.getStatus() + ". It cannot be edited unless rejected by CoE.");
+            }
             previousStatus = result.getStatus();
             // Update mutable fields
             result.setRegisterNumber(incoming.getRegisterNumber());
@@ -140,35 +144,36 @@ public class ExamCellService {
     // ── Workflow State Transitions ────────────────────────────────────────────
 
     /**
-     * Exam Cell: mark result as VERIFIED.
-     * Allowed from: DRAFT
+     * Exam Cell: mark result as SUBMITTED (sent for CoE Approval).
+     * Allowed from: DRAFT, REJECTED
      */
     @Transactional
-    public ExamCellResult verifyResult(Long resultId, String performedBy, String role, String comments) {
+    public ExamCellResult submitResult(Long resultId, String performedBy, String role, String comments) {
         ExamCellResult result = getResultOrThrow(resultId);
-        validateTransition(result.getStatus(), "DRAFT", "VERIFIED");
+        String cur = result.getStatus();
+        if (!"DRAFT".equalsIgnoreCase(cur) && !"REJECTED".equalsIgnoreCase(cur)) {
+            throw new IllegalStateException("Can only submit from DRAFT or REJECTED. Current: " + cur);
+        }
 
         String oldStatus = result.getStatus();
-        result.setStatus("VERIFIED");
-        result.setVerifiedBy(performedBy);
-        result.setVerifiedAt(LocalDateTime.now());
+        result.setStatus("SUBMITTED");
         resultRepository.save(result);
 
         auditRepository.save(new ExamCellResultAudit(
-                resultId, result.getStudentId(), "VERIFIED",
-                oldStatus, "VERIFIED", performedBy, role, comments));
+                resultId, result.getStudentId(), "SUBMITTED",
+                oldStatus, "SUBMITTED", performedBy, role, comments));
 
         return result;
     }
 
     /**
-     * Authorized authority (Dean/Admin): APPROVE the result.
-     * Allowed from: VERIFIED
+     * CoE: APPROVE the result.
+     * Allowed from: SUBMITTED
      */
     @Transactional
     public ExamCellResult approveResult(Long resultId, String performedBy, String role, String comments) {
         ExamCellResult result = getResultOrThrow(resultId);
-        validateTransition(result.getStatus(), "VERIFIED", "APPROVED");
+        validateTransition(result.getStatus(), "SUBMITTED", "APPROVED");
 
         String oldStatus = result.getStatus();
         result.setStatus("APPROVED");
@@ -184,7 +189,7 @@ public class ExamCellService {
     }
 
     /**
-     * Exam Cell / Admin: PUBLISH the result.
+     * Exam Cell: PUBLISH the result.
      * Allowed from: APPROVED
      * After this, students can see the result in their Progress Card.
      */
@@ -193,9 +198,9 @@ public class ExamCellService {
         ExamCellResult result = getResultOrThrow(resultId);
 
         String cur = result.getStatus();
-        if (!"APPROVED".equalsIgnoreCase(cur) && !"VERIFIED".equalsIgnoreCase(cur) && !"DRAFT".equalsIgnoreCase(cur)) {
+        if (!"APPROVED".equalsIgnoreCase(cur)) {
             throw new IllegalStateException(String.format(
-                    "Cannot transition to PUBLISHED from %s. Expected current status: DRAFT, VERIFIED, or APPROVED.",
+                    "Cannot transition to PUBLISHED from %s. Expected current status: APPROVED.",
                     cur));
         }
 
@@ -213,22 +218,25 @@ public class ExamCellService {
     }
 
     /**
-     * Return result back to DRAFT for correction.
-     * Allowed from: VERIFIED or APPROVED (not PUBLISHED).
+     * CoE: REJECT result for correction.
+     * Allowed from: SUBMITTED
      */
     @Transactional
-    public ExamCellResult returnForCorrection(Long resultId, String performedBy, String role, String reason) {
+    public ExamCellResult rejectResult(Long resultId, String performedBy, String role, String reason) {
         ExamCellResult result = getResultOrThrow(resultId);
-        if ("PUBLISHED".equalsIgnoreCase(result.getStatus())) {
-            throw new IllegalStateException("Cannot return a PUBLISHED result. Use a correction workflow.");
-        }
+
+        validateTransition(result.getStatus(), "SUBMITTED", "REJECTED");
+
         String oldStatus = result.getStatus();
-        result.setStatus("DRAFT");
+        result.setStatus("REJECTED");
+        result.setRejectedBy(performedBy);
+        result.setRejectedAt(LocalDateTime.now());
+        result.setRejectionReason(reason);
         resultRepository.save(result);
 
         auditRepository.save(new ExamCellResultAudit(
-                resultId, result.getStudentId(), "RETURNED_FOR_CORRECTION",
-                oldStatus, "DRAFT", performedBy, role, reason));
+                resultId, result.getStudentId(), "REJECTED",
+                oldStatus, "REJECTED", performedBy, role, reason));
 
         return result;
     }
@@ -285,6 +293,9 @@ public class ExamCellService {
     }
 
     public List<ExamCellResult> getResultsByStatus(String status) {
+        if ("ALL".equalsIgnoreCase(status)) {
+            return resultRepository.findAll();
+        }
         return resultRepository.findByStatus(status);
     }
 
