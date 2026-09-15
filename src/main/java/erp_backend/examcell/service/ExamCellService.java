@@ -233,6 +233,21 @@ public class ExamCellService {
         return result;
     }
 
+    /**
+     * Delete a semester result.
+     */
+    @Transactional
+    public void deleteResult(Long resultId, String performedBy, String role) {
+        ExamCellResult result = getResultOrThrow(resultId);
+        String oldStatus = result.getStatus();
+
+        resultRepository.delete(result);
+
+        auditRepository.save(new ExamCellResultAudit(
+                resultId, result.getStudentId(), "DELETED",
+                oldStatus, "DELETED", performedBy, role, "Deleted entire semester result"));
+    }
+
     // ── Query Methods ─────────────────────────────────────────────────────────
 
     /** Student access: only PUBLISHED results */

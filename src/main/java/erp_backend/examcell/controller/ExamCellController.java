@@ -147,6 +147,24 @@ public class ExamCellController {
         }
     }
 
+    /**
+     * DELETE /api/exam-cell/results/{id}
+     * Delete a semester result.
+     */
+    @DeleteMapping("/results/{id}")
+    public ResponseEntity<?> deleteResult(
+            @PathVariable Long id,
+            @RequestParam String performedBy,
+            @RequestParam(defaultValue = "EXAM_CELL") String role) {
+        try {
+            examCellService.deleteResult(id, performedBy, role);
+            return ResponseEntity.ok(Map.of("message", "Result deleted successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Exam Cell: Query Endpoints ────────────────────────────────────────────
 
     /** GET all results for a student (any status) — Exam Cell / Admin view */
