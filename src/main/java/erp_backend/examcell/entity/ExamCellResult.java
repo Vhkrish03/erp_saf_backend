@@ -96,6 +96,12 @@ public class ExamCellResult {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(name = "publication_authorized_by", length = 50)
+    private String publicationAuthorizedBy;
+
+    @Column(name = "publication_authorized_at")
+    private LocalDateTime publicationAuthorizedAt;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -292,6 +298,22 @@ public class ExamCellResult {
 
     public void setPublishedAt(LocalDateTime publishedAt) {
         this.publishedAt = publishedAt;
+    }
+
+    public String getPublicationAuthorizedBy() {
+        return publicationAuthorizedBy;
+    }
+
+    public void setPublicationAuthorizedBy(String publicationAuthorizedBy) {
+        this.publicationAuthorizedBy = publicationAuthorizedBy;
+    }
+
+    public LocalDateTime getPublicationAuthorizedAt() {
+        return publicationAuthorizedAt;
+    }
+
+    public void setPublicationAuthorizedAt(LocalDateTime publicationAuthorizedAt) {
+        this.publicationAuthorizedAt = publicationAuthorizedAt;
     }
 
     public LocalDateTime getCreatedAt() {
