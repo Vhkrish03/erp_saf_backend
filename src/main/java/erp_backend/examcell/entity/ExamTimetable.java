@@ -24,12 +24,16 @@ public class ExamTimetable {
     private String subjectName;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate examDate;
 
     @Column(nullable = false)
     private String session; // e.g. "FN" or "AN"
 
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "HH:mm:ss")
     private LocalTime startTime;
+
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "HH:mm:ss")
     private LocalTime endTime;
 
     private String roomHall;

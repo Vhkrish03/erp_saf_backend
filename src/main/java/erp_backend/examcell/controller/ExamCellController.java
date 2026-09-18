@@ -441,6 +441,18 @@ public class ExamCellController {
         }
     }
 
+    @PostMapping("/examinations/{id}/fee-deadline")
+    public ResponseEntity<?> setFeeDeadline(
+            @PathVariable Long id,
+            @RequestParam String deadline) {
+        try {
+            java.time.LocalDate date = java.time.LocalDate.parse(deadline);
+            return ResponseEntity.ok(examinationService.setFeeDeadline(id, date));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── CoE Workflow & Fees ──────────────────────────────────────────────────
 
     @PostMapping("/examinations/{id}/submit")

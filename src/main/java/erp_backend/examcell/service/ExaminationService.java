@@ -7,7 +7,7 @@ import erp_backend.examcell.repository.ExamRegistrationRepository;
 import erp_backend.examcell.repository.ExaminationRepository;
 import erp_backend.repository.StudentRepository;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -227,6 +227,13 @@ public class ExaminationService {
         }
 
         exam.setApprovalStatus("SUBMITTED_HALL_TICKETS");
+        return examinationRepository.save(exam);
+    }
+
+    public Examination setFeeDeadline(Long examId, LocalDate deadline) {
+        Examination exam = examinationRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
+        exam.setFeeDeadline(deadline);
         return examinationRepository.save(exam);
     }
 

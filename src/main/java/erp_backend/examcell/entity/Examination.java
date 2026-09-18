@@ -54,6 +54,10 @@ public class Examination {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
+    @Column(name = "fee_deadline")
+    private LocalDate feeDeadline;
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -189,5 +193,13 @@ public class Examination {
 
     public void setApprovedAt(LocalDateTime approvedAt) {
         this.approvedAt = approvedAt;
+    }
+
+    public LocalDate getFeeDeadline() {
+        return feeDeadline;
+    }
+
+    public void setFeeDeadline(LocalDate feeDeadline) {
+        this.feeDeadline = feeDeadline;
     }
 }
