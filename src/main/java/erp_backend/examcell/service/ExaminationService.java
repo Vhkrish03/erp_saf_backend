@@ -49,7 +49,7 @@ public class ExaminationService {
         return examinationRepository.save(exam);
     }
 
-    public Examination updateExamination(Long id, Examination updated, String performedBy) {
+    public Examination updateExamination(long id, Examination updated, String performedBy) {
         Examination existing = examinationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
@@ -151,12 +151,12 @@ public class ExaminationService {
     public Examination submitToCoe(Long examId, String performedBy) {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-        // Basic validation
+
         List<erp_backend.examcell.entity.ExamTimetable> tt = getTimetableForExam(examId);
         if (tt.isEmpty()) {
-            throw new IllegalStateException("Cannot submit: Timetable is empty.");
+            throw new IllegalStateException("Cannot submit: Timetable/Papers are empty.");
         }
-        exam.setApprovalStatus("SUBMITTED_SCHEDULE");
+        exam.setApprovalStatus("SUBMITTED_TO_COE");
         return examinationRepository.save(exam);
     }
 
@@ -164,14 +164,7 @@ public class ExaminationService {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
-        if ("SUBMITTED_SCHEDULE".equals(exam.getApprovalStatus())) {
-            exam.setApprovalStatus("SCHEDULE_APPROVED");
-        } else if ("SUBMITTED_HALL_TICKETS".equals(exam.getApprovalStatus())) {
-            exam.setApprovalStatus("HALL_TICKETS_APPROVED");
-        } else {
-            exam.setApprovalStatus("APPROVED");
-        }
-
+        exam.setApprovalStatus("COE_APPROVED");
         exam.setApprovedBy(performedBy);
         exam.setApprovedAt(LocalDateTime.now());
         return examinationRepository.save(exam);
@@ -180,54 +173,23 @@ public class ExaminationService {
     public Examination rejectByCoe(Long examId, String reason, String performedBy) {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-        exam.setApprovalStatus("REJECTED");
+        exam.setApprovalStatus("COE_REJECTED");
         exam.setRejectionReason(reason);
         return examinationRepository.save(exam);
     }
 
-    public Examination publishHallTickets(Long examId, String performedBy) {
-        Examination exam = examinationRepository.findById(examId)
-                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-        if (!"HALL_TICKETS_APPROVED".equals(exam.getApprovalStatus())) {
-            throw new IllegalStateException("Cannot publish hall tickets: Hall Tickets Not Approved by CoE.");
+    public ExamRegistration verifyStudentPayment(Long regId, String verifiedBy, String verificationStatus) {
+        ExamRegistration reg = registrationRepository.findById(regId)
+                .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
+
+        reg.setVerificationStatus(verificationStatus);
+        reg.setVerifiedBy(verifiedBy);
+        reg.setVerificationDate(LocalDateTime.now());
+        if ("VERIFIED".equals(verificationStatus)) {
+            reg.setFeePaid(true); // Inherited flag legacy support
+            reg.setPaymentStatus("SUCCESS");
         }
-        exam.setApprovalStatus("PUBLISHED");
-        return examinationRepository.save(exam);
-    }
-
-    public Examination submitHallTicketsToCoe(Long examId, String performedBy) {
-        Examination exam = examinationRepository.findById(examId)
-                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-
-        if (!"FEES_PUBLISHED".equals(exam.getApprovalStatus())) {
-            throw new IllegalStateException("Cannot submit hall tickets: Fees must be published and collected first.");
-        }
-
-        // Refresh payments from Accountant StudentFee
-        List<ExamRegistration> registrations = registrationRepository.findByExaminationId(examId);
-        for (ExamRegistration reg : registrations) {
-            Student student = studentRepository.findById(reg.getStudentId()).orElse(null);
-            if (student != null && reg.getTotalFee() != null && reg.getTotalFee() > 0) {
-                // Find matching StudentFee for this exact exam description
-                String desc = "Exam Fee - " + exam.getExamName();
-                List<erp_backend.fees.entity.StudentFee> sfList = studentFeeRepository.findByStudentId(student.getId());
-                boolean hasPaid = sfList.stream()
-                        .filter(sf -> sf.getFeeStructure() != null
-                                && desc.equals(sf.getFeeStructure().getDescription()))
-                        .anyMatch(sf -> "PAID".equals(sf.getPaymentStatus()));
-
-                if (hasPaid) {
-                    reg.setFeePaid(true);
-                    reg.setPaymentStatus("PAID");
-                } else {
-                    reg.setPaymentStatus("PENDING");
-                }
-                registrationRepository.save(reg);
-            }
-        }
-
-        exam.setApprovalStatus("SUBMITTED_HALL_TICKETS");
-        return examinationRepository.save(exam);
+        return registrationRepository.save(reg);
     }
 
     public Examination setFeeDeadline(Long examId, LocalDate deadline) {
@@ -235,6 +197,13 @@ public class ExaminationService {
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
         exam.setFeeDeadline(deadline);
         return examinationRepository.save(exam);
+    }
+
+    public erp_backend.examcell.entity.ExamTimetable updatePaperFee(Long paperId, Double fee) {
+        erp_backend.examcell.entity.ExamTimetable tt = timetableRepository.findById(paperId)
+                .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        tt.setExamFee(fee);
+        return timetableRepository.save(tt);
     }
 
     public void syncExamFeesWithAccountant(Long examId) {
@@ -318,6 +287,15 @@ public class ExaminationService {
 
         if (!"REGISTERED".equals(reg.getStatus()) && !"ELIGIBLE".equals(reg.getStatus())) {
             throw new IllegalStateException("Student is not eligible for a hall ticket.");
+        }
+
+        if (!"COE_APPROVED".equals(reg.getExamination().getApprovalStatus())) {
+            throw new IllegalStateException("Examination is not COE Approved yet.");
+        }
+
+        if (!"VERIFIED".equals(reg.getVerificationStatus())) {
+            throw new IllegalStateException(
+                    "Hall ticket locked: examination fee payment is not manually verified by Exam Cell.");
         }
 
         Examination exam = reg.getExamination();

@@ -41,7 +41,16 @@ public class ExamRegistration {
     private Double totalFee = 0.0;
 
     @Column(name = "payment_status")
-    private String paymentStatus = "PENDING"; // PENDING, PAID, FAILED
+    private String paymentStatus = "PENDING"; // PENDING, SUCCESS, FAILED, VERIFIED
+
+    @Column(name = "verification_status")
+    private String verificationStatus; // VERIFIED, NOT_VERIFIED, PENDING_VERIFICATION
+
+    @Column(name = "verified_by")
+    private String verifiedBy;
+
+    @Column(name = "verification_date")
+    private LocalDateTime verificationDate;
 
     private LocalDateTime registeredAt;
 
@@ -116,6 +125,30 @@ public class ExamRegistration {
 
     public void setRegisteredAt(LocalDateTime registeredAt) {
         this.registeredAt = registeredAt;
+    }
+
+    public String getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(String verificationStatus) {
+        this.verificationStatus = verificationStatus;
+    }
+
+    public String getVerifiedBy() {
+        return verifiedBy;
+    }
+
+    public void setVerifiedBy(String verifiedBy) {
+        this.verifiedBy = verifiedBy;
+    }
+
+    public LocalDateTime getVerificationDate() {
+        return verificationDate;
+    }
+
+    public void setVerificationDate(LocalDateTime verificationDate) {
+        this.verificationDate = verificationDate;
     }
 
     public java.util.List<String> getRegisteredSubjects() {

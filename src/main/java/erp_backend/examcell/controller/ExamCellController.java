@@ -430,12 +430,13 @@ public class ExamCellController {
         }
     }
 
-    @PostMapping("/examinations/{id}/submit-hall-tickets")
-    public ResponseEntity<?> submitHallTicketsToCoe(
+    @PostMapping("/registrations/{id}/verify-payment")
+    public ResponseEntity<?> verifyStudentPayment(
             @PathVariable Long id,
-            @RequestParam String performedBy) {
+            @RequestParam String verifiedBy,
+            @RequestParam String status) {
         try {
-            return ResponseEntity.ok(examinationService.submitHallTicketsToCoe(id, performedBy));
+            return ResponseEntity.ok(examinationService.verifyStudentPayment(id, verifiedBy, status));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -489,17 +490,6 @@ public class ExamCellController {
         }
     }
 
-    @PostMapping("/examinations/{id}/publish-hall-tickets")
-    public ResponseEntity<?> publishHallTickets(
-            @PathVariable Long id,
-            @RequestParam String performedBy) {
-        try {
-            return ResponseEntity.ok(examinationService.publishHallTickets(id, performedBy));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
     @PostMapping("/examinations/{id}/sync-fees")
     public ResponseEntity<?> syncExamFees(@PathVariable Long id) {
         try {
@@ -515,6 +505,17 @@ public class ExamCellController {
     @GetMapping("/examinations/{id}/timetable")
     public ResponseEntity<List<erp_backend.examcell.entity.ExamTimetable>> getTimetable(@PathVariable Long id) {
         return ResponseEntity.ok(examinationService.getTimetableForExam(id));
+    }
+
+    @PutMapping("/papers/{id}/fee")
+    public ResponseEntity<?> updatePaperFee(
+            @PathVariable Long id,
+            @RequestParam Double fee) {
+        try {
+            return ResponseEntity.ok(examinationService.updatePaperFee(id, fee));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/examinations/{id}/timetable")
