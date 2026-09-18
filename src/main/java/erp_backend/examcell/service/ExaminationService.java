@@ -79,6 +79,20 @@ public class ExaminationService {
         return studentRepository.findDistinctDepartments();
     }
 
+    public void deleteExamination(Long id) {
+        Examination exam = examinationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
+        // Cascade delete child entities
+        List<ExamRegistration> registrations = registrationRepository.findByExaminationId(id);
+        registrationRepository.deleteAll(registrations);
+
+        List<erp_backend.examcell.entity.ExamTimetable> timetables = timetableRepository.findByExaminationId(id);
+        timetableRepository.deleteAll(timetables);
+
+        // Delete main record
+        examinationRepository.delete(exam);
+    }
+
     // ─── Exam Registration & Eligibility ────────────────────────────────────────
 
     public List<ExamRegistration> getRegistrationsForExam(Long examId) {

@@ -400,6 +400,16 @@ public class ExamCellController {
         return ResponseEntity.notFound().build();
     }
 
+    @DeleteMapping("/examinations/{id}")
+    public ResponseEntity<?> deleteExamination(@PathVariable Long id, @RequestParam String performedBy) {
+        try {
+            examinationService.deleteExamination(id);
+            return ResponseEntity.ok(Map.of("message", "Examination deleted."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Examination Registration & Eligibility ───────────────────────────────
 
     @GetMapping("/examinations/{id}/registrations")
