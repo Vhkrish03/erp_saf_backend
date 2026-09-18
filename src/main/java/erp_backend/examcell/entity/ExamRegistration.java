@@ -13,6 +13,7 @@ public class ExamRegistration {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "examination_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Examination examination;
 
     @Column(nullable = false)
