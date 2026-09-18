@@ -430,6 +430,17 @@ public class ExamCellController {
         }
     }
 
+    @PostMapping("/examinations/{id}/submit-hall-tickets")
+    public ResponseEntity<?> submitHallTicketsToCoe(
+            @PathVariable Long id,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.submitHallTicketsToCoe(id, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── CoE Workflow & Fees ──────────────────────────────────────────────────
 
     @PostMapping("/examinations/{id}/submit")
