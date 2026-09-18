@@ -84,9 +84,8 @@ public class ExaminationService {
         Examination exam = examinationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
-        // Cascade delete child entities
-        List<ExamRegistration> registrations = registrationRepository.findByExaminationId(id);
-        registrationRepository.deleteAll(registrations);
+        // Cascade delete child entities bypassing missing registration_subjects table
+        registrationRepository.deleteByExaminationIdNative(id);
 
         List<erp_backend.examcell.entity.ExamTimetable> timetables = timetableRepository.findByExaminationId(id);
         for (erp_backend.examcell.entity.ExamTimetable tt : timetables) {

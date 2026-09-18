@@ -12,4 +12,8 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
     List<ExamRegistration> findByExaminationId(Long examinationId);
 
     Optional<ExamRegistration> findByExaminationIdAndStudentId(Long examinationId, String studentId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(value = "DELETE FROM examcell_registrations WHERE examination_id = :examId", nativeQuery = true)
+    void deleteByExaminationIdNative(@org.springframework.data.repository.query.Param("examId") Long examId);
 }
