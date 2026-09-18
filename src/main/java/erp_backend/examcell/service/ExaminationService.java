@@ -79,14 +79,21 @@ public class ExaminationService {
         return studentRepository.findDistinctDepartments();
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteExamination(Long id) {
         Examination exam = examinationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
+
         // Cascade delete child entities
         List<ExamRegistration> registrations = registrationRepository.findByExaminationId(id);
         registrationRepository.deleteAll(registrations);
 
         List<erp_backend.examcell.entity.ExamTimetable> timetables = timetableRepository.findByExaminationId(id);
+        for (erp_backend.examcell.entity.ExamTimetable tt : timetables) {
+            List<erp_backend.examcell.entity.ExamAttendance> attendances = attendanceRepository
+                    .findByExamTimetableId(tt.getId());
+            attendanceRepository.deleteAll(attendances);
+        }
         timetableRepository.deleteAll(timetables);
 
         // Delete main record
