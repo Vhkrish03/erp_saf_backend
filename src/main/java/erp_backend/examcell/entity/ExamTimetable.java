@@ -34,6 +34,9 @@ public class ExamTimetable {
 
     private String roomHall;
 
+    @Column(name = "exam_fee")
+    private Double examFee = 0.0;
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -105,5 +108,13 @@ public class ExamTimetable {
 
     public void setRoomHall(String roomHall) {
         this.roomHall = roomHall;
+    }
+
+    public Double getExamFee() {
+        return examFee;
+    }
+
+    public void setExamFee(Double examFee) {
+        this.examFee = examFee;
     }
 }

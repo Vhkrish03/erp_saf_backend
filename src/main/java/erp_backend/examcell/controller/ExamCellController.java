@@ -430,6 +430,63 @@ public class ExamCellController {
         }
     }
 
+    // ── CoE Workflow & Fees ──────────────────────────────────────────────────
+
+    @PostMapping("/examinations/{id}/submit")
+    public ResponseEntity<?> submitExamination(
+            @PathVariable Long id,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.submitToCoe(id, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/examinations/{id}/approve")
+    public ResponseEntity<?> approveExamination(
+            @PathVariable Long id,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.approveByCoe(id, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/examinations/{id}/reject")
+    public ResponseEntity<?> rejectExamination(
+            @PathVariable Long id,
+            @RequestParam String reason,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.rejectByCoe(id, reason, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/examinations/{id}/publish-hall-tickets")
+    public ResponseEntity<?> publishHallTickets(
+            @PathVariable Long id,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.publishHallTickets(id, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/examinations/{id}/sync-fees")
+    public ResponseEntity<?> syncExamFees(@PathVariable Long id) {
+        try {
+            examinationService.syncExamFeesWithAccountant(id);
+            return ResponseEntity.ok(Map.of("message", "Exam fees synced with Accountant module successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Examination Timetable ────────────────────────────────────────────────
 
     @GetMapping("/examinations/{id}/timetable")

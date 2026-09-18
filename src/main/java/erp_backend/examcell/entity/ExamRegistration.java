@@ -31,6 +31,17 @@ public class ExamRegistration {
 
     private boolean feePaid;
 
+    @ElementCollection
+    @CollectionTable(name = "examcell_registration_subjects", joinColumns = @JoinColumn(name = "registration_id"))
+    @Column(name = "subject_code")
+    private java.util.List<String> registeredSubjects = new java.util.ArrayList<>();
+
+    @Column(name = "total_fee")
+    private Double totalFee = 0.0;
+
+    @Column(name = "payment_status")
+    private String paymentStatus = "PENDING"; // PENDING, PAID, FAILED
+
     private LocalDateTime registeredAt;
 
     // Getters and Setters
@@ -104,5 +115,29 @@ public class ExamRegistration {
 
     public void setRegisteredAt(LocalDateTime registeredAt) {
         this.registeredAt = registeredAt;
+    }
+
+    public java.util.List<String> getRegisteredSubjects() {
+        return registeredSubjects;
+    }
+
+    public void setRegisteredSubjects(java.util.List<String> registeredSubjects) {
+        this.registeredSubjects = registeredSubjects;
+    }
+
+    public Double getTotalFee() {
+        return totalFee;
+    }
+
+    public void setTotalFee(Double totalFee) {
+        this.totalFee = totalFee;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 }
