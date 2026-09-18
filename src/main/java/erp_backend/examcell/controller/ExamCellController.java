@@ -452,6 +452,72 @@ public class ExamCellController {
         }
     }
 
+    /**
+     * Student pays exam fee. Records the payment reference and sets status
+     * PAYMENT_PENDING.
+     * Exam Cell must separately verify via /verify-payment.
+     * POST
+     * /api/exam-cell/registrations/{id}/pay-fee?paymentReference=TXN123&amountPaid=650
+     */
+    @PostMapping("/registrations/{id}/pay-fee")
+    public ResponseEntity<?> recordStudentPayment(
+            @PathVariable Long id,
+            @RequestParam String paymentReference,
+            @RequestParam double amountPaid) {
+        try {
+            return ResponseEntity.ok(examinationService.recordStudentPayment(id, paymentReference, amountPaid));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get all COE_APPROVED examinations visible to a specific student.
+     * Filters by student's department & semester.
+     * GET /api/exam-cell/student/{studentId}/approved-exams
+     */
+    @GetMapping("/student/{studentId}/approved-exams")
+    public ResponseEntity<?> getApprovedExamsForStudent(@PathVariable String studentId) {
+        try {
+            erp_backend.entity.Student student = studentRepository.findById(studentId).orElse(null);
+            if (student == null)
+                return ResponseEntity.notFound().build();
+
+            List<erp_backend.examcell.entity.Examination> all = examinationService.getAllExaminations();
+            List<erp_backend.examcell.entity.Examination> visible = all.stream()
+                    .filter(e -> "COE_APPROVED".equals(e.getApprovalStatus()))
+                    .filter(e -> student.getDepartment() != null &&
+                            student.getDepartment().equalsIgnoreCase(e.getDepartment()))
+                    .filter(e -> e.getSemesterName() == null || e.getSemesterName().isBlank() ||
+                            e.getSemesterName().equalsIgnoreCase(student.getSemester()))
+                    .toList();
+            return ResponseEntity.ok(visible);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get a student's registration record for a specific exam.
+     * GET /api/exam-cell/student/{studentId}/exam/{examId}/registration
+     */
+    @GetMapping("/student/{studentId}/exam/{examId}/registration")
+    public ResponseEntity<?> getStudentRegistration(
+            @PathVariable String studentId,
+            @PathVariable Long examId) {
+        try {
+            List<erp_backend.examcell.entity.ExamRegistration> regs = examinationService
+                    .getRegistrationsForExam(examId);
+            return regs.stream()
+                    .filter(r -> r.getStudentId().equals(studentId))
+                    .<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .findFirst()
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/examinations/{id}/fee-deadline")
     public ResponseEntity<?> setFeeDeadline(
             @PathVariable Long id,

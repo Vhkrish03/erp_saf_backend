@@ -3,15 +3,23 @@ package erp_backend.examcell.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Tracks each student's registration status for a given examination.
+ * The @ElementCollection for registeredSubjects has been removed because
+ * the corresponding table (examcell_registration_subjects) was never created,
+ * causing Hibernate to crash at startup. subjects are now derived at runtime
+ * from the exam's ExamTimetable entries.
+ */
 @Entity
-@Table(name = "examcell_registrations")
+@Table(name = "examcell_registrations", uniqueConstraints = @UniqueConstraint(columnNames = { "examination_id",
+        "student_id" }))
 public class ExamRegistration {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "examination_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Examination examination;
@@ -25,26 +33,42 @@ public class ExamRegistration {
     @Column(nullable = false)
     private String registerNumber;
 
+    /**
+     * ELIGIBLE - student is eligible but hasn't registered yet
+     * REGISTERED - student has been registered by Exam Cell
+     * NOT_ELIGIBLE - student fails eligibility criteria
+     */
     @Column(nullable = false)
-    private String status = "ELIGIBLE"; // ELIGIBLE, NOT_ELIGIBLE, PENDING_VERIFICATION, REGISTERED
+    private String status = "ELIGIBLE";
 
     private String eligibilityReason;
 
+    /** true once Exam Cell verifies the payment */
     private boolean feePaid;
 
-    @ElementCollection
-    @CollectionTable(name = "examcell_registration_subjects", joinColumns = @JoinColumn(name = "registration_id"))
-    @Column(name = "subject_code")
-    private java.util.List<String> registeredSubjects = new java.util.ArrayList<>();
-
+    /** Computed total fee = sum of all timetable paper fees */
     @Column(name = "total_fee")
     private Double totalFee = 0.0;
 
+    /**
+     * NOT_PAID - default
+     * PAYMENT_PENDING - student initiated payment
+     * PAYMENT_SUCCESS - payment gateway confirmed
+     * PAYMENT_FAILED - payment failed
+     * VERIFIED - Exam Cell manually verified
+     */
     @Column(name = "payment_status")
-    private String paymentStatus = "PENDING"; // PENDING, SUCCESS, FAILED, VERIFIED
+    private String paymentStatus = "NOT_PAID";
 
+    @Column(name = "payment_reference")
+    private String paymentReference;
+
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
+    /** VERIFIED | NOT_VERIFIED */
     @Column(name = "verification_status")
-    private String verificationStatus; // VERIFIED, NOT_VERIFIED, PENDING_VERIFICATION
+    private String verificationStatus;
 
     @Column(name = "verified_by")
     private String verifiedBy;
@@ -52,9 +76,16 @@ public class ExamRegistration {
     @Column(name = "verification_date")
     private LocalDateTime verificationDate;
 
+    @Column(name = "verification_remarks")
+    private String verificationRemarks;
+
     private LocalDateTime registeredAt;
 
-    // Getters and Setters
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    // ── Getters & Setters ────────────────────────────────────────────────────
+
     public Long getId() {
         return id;
     }
@@ -119,12 +150,36 @@ public class ExamRegistration {
         this.feePaid = feePaid;
     }
 
-    public LocalDateTime getRegisteredAt() {
-        return registeredAt;
+    public Double getTotalFee() {
+        return totalFee;
     }
 
-    public void setRegisteredAt(LocalDateTime registeredAt) {
-        this.registeredAt = registeredAt;
+    public void setTotalFee(Double totalFee) {
+        this.totalFee = totalFee;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentReference() {
+        return paymentReference;
+    }
+
+    public void setPaymentReference(String paymentReference) {
+        this.paymentReference = paymentReference;
+    }
+
+    public LocalDateTime getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDateTime paymentDate) {
+        this.paymentDate = paymentDate;
     }
 
     public String getVerificationStatus() {
@@ -151,27 +206,27 @@ public class ExamRegistration {
         this.verificationDate = verificationDate;
     }
 
-    public java.util.List<String> getRegisteredSubjects() {
-        return registeredSubjects;
+    public String getVerificationRemarks() {
+        return verificationRemarks;
     }
 
-    public void setRegisteredSubjects(java.util.List<String> registeredSubjects) {
-        this.registeredSubjects = registeredSubjects;
+    public void setVerificationRemarks(String verificationRemarks) {
+        this.verificationRemarks = verificationRemarks;
     }
 
-    public Double getTotalFee() {
-        return totalFee;
+    public LocalDateTime getRegisteredAt() {
+        return registeredAt;
     }
 
-    public void setTotalFee(Double totalFee) {
-        this.totalFee = totalFee;
+    public void setRegisteredAt(LocalDateTime registeredAt) {
+        this.registeredAt = registeredAt;
     }
 
-    public String getPaymentStatus() {
-        return paymentStatus;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

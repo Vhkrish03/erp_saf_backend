@@ -20,23 +20,17 @@ public class ExaminationService {
     private final erp_backend.examcell.repository.ExamTimetableRepository timetableRepository;
     private final erp_backend.examcell.repository.ExamAttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
-    private final erp_backend.fees.repository.FeeStructureRepository feeStructureRepository;
-    private final erp_backend.fees.repository.StudentFeeRepository studentFeeRepository;
 
     public ExaminationService(ExaminationRepository examinationRepository,
             ExamRegistrationRepository registrationRepository,
             erp_backend.examcell.repository.ExamTimetableRepository timetableRepository,
             erp_backend.examcell.repository.ExamAttendanceRepository attendanceRepository,
-            StudentRepository studentRepository,
-            erp_backend.fees.repository.FeeStructureRepository feeStructureRepository,
-            erp_backend.fees.repository.StudentFeeRepository studentFeeRepository) {
+            StudentRepository studentRepository) {
         this.examinationRepository = examinationRepository;
         this.registrationRepository = registrationRepository;
         this.timetableRepository = timetableRepository;
         this.attendanceRepository = attendanceRepository;
         this.studentRepository = studentRepository;
-        this.feeStructureRepository = feeStructureRepository;
-        this.studentFeeRepository = studentFeeRepository;
     }
 
     // ─── Examination Management ────────────────────────────────────────────────
@@ -113,12 +107,16 @@ public class ExaminationService {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
-        List<Student> students = studentRepository.findByDepartment(exam.getDepartment());
+        // Filter students by matching department and semester
+        List<Student> students = studentRepository.findByDepartment(exam.getDepartment())
+                .stream()
+                .filter(s -> exam.getSemesterName() == null || exam.getSemesterName().isBlank()
+                        || exam.getSemesterName().equalsIgnoreCase(s.getSemester()))
+                .toList();
 
-        // Auto-populate subjects from timetable to ensure fee calculations work
-        // downstream
+        // Compute total fee from timetable for each registered student
         List<erp_backend.examcell.entity.ExamTimetable> tt = getTimetableForExam(examId);
-        List<String> ttSubjects = tt.stream().map(t -> t.getSubjectCode()).toList();
+        double totalFee = tt.stream().mapToDouble(t -> t.getExamFee() != null ? t.getExamFee() : 0.0).sum();
 
         for (Student s : students) {
             Optional<ExamRegistration> existing = registrationRepository.findByExaminationIdAndStudentId(examId,
@@ -128,18 +126,35 @@ public class ExaminationService {
                 reg.setExamination(exam);
                 reg.setStudentId(s.getId());
                 reg.setStudentName(s.getName());
-                reg.setRegisterNumber(s.getRollNumber());
-
-                // Eligibility Logic (Mocking ERP rules: e.g. Attendance > 75%, Fee paid)
-                // We'll mark them ELIGIBLE by default for prototype, but in real ERP this
-                // consumes master services.
+                reg.setRegisterNumber(s.getRollNumber() != null ? s.getRollNumber() : s.getId());
                 reg.setStatus("ELIGIBLE");
-                reg.setEligibilityReason("Satisfies minimal requirements.");
-                reg.setFeePaid(false); // Default
-                reg.setRegisteredSubjects(ttSubjects);
+                reg.setEligibilityReason("Auto-generated: satisfies department/semester criteria.");
+                reg.setFeePaid(false);
+                reg.setTotalFee(totalFee);
+                reg.setPaymentStatus("NOT_PAID");
+                registrationRepository.save(reg);
+            } else {
+                // Update fee in case paper fees changed after regeneration
+                ExamRegistration reg = existing.get();
+                reg.setTotalFee(totalFee);
                 registrationRepository.save(reg);
             }
         }
+    }
+
+    /**
+     * Called by Student when they initiate exam fee payment.
+     * Records payment reference and sets status to PAYMENT_PENDING.
+     * Exam Cell must separately VERIFY the payment.
+     */
+    public ExamRegistration recordStudentPayment(Long regId, String paymentReference, double amountPaid) {
+        ExamRegistration reg = registrationRepository.findById(regId)
+                .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
+        reg.setPaymentStatus("PAYMENT_PENDING");
+        reg.setPaymentReference(paymentReference);
+        reg.setPaymentDate(LocalDateTime.now());
+        // Will be changed to PAYMENT_SUCCESS by Exam Cell verification
+        return registrationRepository.save(reg);
     }
 
     public void updateRegistrationStatus(Long regId, String status, boolean isFeePaid) {
@@ -227,72 +242,20 @@ public class ExaminationService {
     }
 
     public void syncExamFeesWithAccountant(Long examId) {
-        Examination exam = examinationRepository.findById(examId)
-                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-
-        List<erp_backend.examcell.entity.ExamTimetable> tt = getTimetableForExam(examId);
-        List<ExamRegistration> registrations = registrationRepository.findByExaminationId(examId);
-
-        // Calculate fee per student
-        for (ExamRegistration reg : registrations) {
-            double fee = 0;
-            if (reg.getRegisteredSubjects() != null) {
-                for (String subjectCode : reg.getRegisteredSubjects()) {
-                    erp_backend.examcell.entity.ExamTimetable entry = tt.stream()
-                            .filter(t -> t.getSubjectCode().equals(subjectCode)).findFirst().orElse(null);
-                    if (entry != null && entry.getExamFee() != null) {
-                        fee += entry.getExamFee();
-                    }
-                }
-            }
-            reg.setTotalFee(fee);
-
-            // Check existing student fee
-            erp_backend.fees.entity.StudentFee sf = null;
-            String feeDesc = "Exam Fee - " + exam.getExamName();
-
-            // Push to accountant fees
-            if (fee > 0) {
-                // Creating a FeeStructure for this exam ad-hoc if not exists
-                erp_backend.fees.entity.FeeStructure fs = new erp_backend.fees.entity.FeeStructure();
-                fs.setAcademicYear(exam.getAcademicYear());
-                fs.setSemester(exam.getSemesterName());
-                fs.setDepartment(exam.getDepartment());
-                fs.setTotalAmount(fee);
-                fs.setActive(true);
-                fs.setCreatedBy("EXAM_CELL");
-                fs.setStatus("PUBLISHED");
-                fs.setDescription(feeDesc);
-
-                java.util.List<erp_backend.fees.entity.FeeComponent> components = new java.util.ArrayList<>();
-                erp_backend.fees.entity.FeeComponent c = new erp_backend.fees.entity.FeeComponent();
-                c.setName("Exam Fee");
-                c.setAmount(fee);
-                c.setApplicableCondition("ALL");
-                components.add(c);
-                fs.setFeeComponents(components);
-
-                fs = feeStructureRepository.save(fs);
-
-                sf = new erp_backend.fees.entity.StudentFee();
-                Student student = studentRepository.findById(reg.getStudentId()).orElse(null);
-                if (student != null) {
-                    sf.setStudent(student);
-                    sf.setFeeStructure(fs);
-                    sf.setAcademicYear(exam.getAcademicYear());
-                    sf.setSemester(exam.getSemesterName());
-                    sf.setTotalFee(fee);
-                    sf.setAmountPaid(0.0);
-                    sf.recomputeStatus();
-                    studentFeeRepository.save(sf);
-                }
-            }
-
-            registrationRepository.save(reg);
+        // Validate exam exists; variable intentionally used for validation
+        if (!examinationRepository.existsById(examId)) {
+            throw new IllegalArgumentException("Examination not found: " + examId);
         }
 
-        exam.setApprovalStatus("FEES_PUBLISHED");
-        examinationRepository.save(exam);
+        List<erp_backend.examcell.entity.ExamTimetable> tt = getTimetableForExam(examId);
+        // Total fee = sum of all paper fees in the timetable
+        double totalFee = tt.stream().mapToDouble(t -> t.getExamFee() != null ? t.getExamFee() : 0.0).sum();
+
+        List<ExamRegistration> registrations = registrationRepository.findByExaminationId(examId);
+        for (ExamRegistration reg : registrations) {
+            reg.setTotalFee(totalFee);
+            registrationRepository.save(reg);
+        }
     }
 
     public List<erp_backend.examcell.entity.ExamTimetable> getTimetableForExam(Long examId) {
