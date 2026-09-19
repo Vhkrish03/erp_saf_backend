@@ -107,11 +107,12 @@ public class ExaminationService {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
-        // Filter students by matching department and semester
-        List<Student> students = studentRepository.findByDepartment(exam.getDepartment())
+        // Filter students by matching department and semester using normalized checks
+        List<Student> students = studentRepository.findAll()
                 .stream()
+                .filter(s -> normalizeDept(s.getDepartment()).equals(normalizeDept(exam.getDepartment())))
                 .filter(s -> exam.getSemesterName() == null || exam.getSemesterName().isBlank()
-                        || exam.getSemesterName().equalsIgnoreCase(s.getSemester()))
+                        || normalizeSem(exam.getSemesterName()).equals(normalizeSem(s.getSemester())))
                 .toList();
 
         // Compute total fee from timetable for each registered student
@@ -356,5 +357,32 @@ public class ExaminationService {
         att.setMarkedBy(performedBy);
         att.setMarkedAt(LocalDateTime.now());
         attendanceRepository.save(att);
+    }
+
+    private String normalizeDept(String d) {
+        if (d == null) return "";
+        String low = d.toLowerCase().trim();
+        if (low.contains("computer") || low.equals("cs") || low.equals("cse")) return "CSE";
+        if (low.contains("electronics") || low.contains("communication") || low.equals("ece")) return "ECE";
+        if (low.contains("electrical") || low.equals("eee")) return "EEE";
+        if (low.contains("mechanical") || low.equals("mech") || low.equals("me")) return "MECH";
+        if (low.contains("civil") || low.equals("ce")) return "CIVIL";
+        if (low.contains("information") || low.equals("it")) return "IT";
+        if (low.contains("artificial") || low.contains("data") || low.contains("ai")) return "AIDS";
+        return low.replaceAll("[^a-z0-9]", "");
+    }
+
+    private String normalizeSem(String s) {
+        if (s == null) return "";
+        String low = s.toLowerCase().trim();
+        if (low.equals("1") || low.equals("i") || low.equals("first")) return "1";
+        if (low.equals("2") || low.equals("ii") || low.equals("second")) return "2";
+        if (low.equals("3") || low.equals("iii") || low.equals("third")) return "3";
+        if (low.equals("4") || low.equals("iv") || low.equals("fourth")) return "4";
+        if (low.equals("5") || low.equals("v") || low.equals("fifth")) return "5";
+        if (low.equals("6") || low.equals("vi") || low.equals("sixth")) return "6";
+        if (low.equals("7") || low.equals("vii") || low.equals("seventh")) return "7";
+        if (low.equals("8") || low.equals("viii") || low.equals("eighth")) return "8";
+        return low.replaceAll("[^a-z0-9]", "");
     }
 }
