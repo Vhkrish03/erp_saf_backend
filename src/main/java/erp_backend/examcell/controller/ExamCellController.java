@@ -576,6 +576,17 @@ public class ExamCellController {
         }
     }
 
+    @PostMapping("/examinations/{id}/fee-deadline")
+    public ResponseEntity<?> setFeeDeadline(
+            @PathVariable Long id,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate deadline) {
+        try {
+            return ResponseEntity.ok(examinationService.setFeeDeadline(id, deadline));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Examination Timetable ────────────────────────────────────────────────
 
     @GetMapping("/examinations/{id}/timetable")
