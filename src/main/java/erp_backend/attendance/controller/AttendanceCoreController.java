@@ -168,8 +168,20 @@ public class AttendanceCoreController {
             Map<String, Object> response = new HashMap<>();
             if (session != null) {
                 response.put("exists", true);
-                response.put("session", session);
-                response.put("records", coreService.getRecordsForSession(session.getId()));
+
+                Map<String, Object> sessionMap = new HashMap<>();
+                sessionMap.put("id", session.getId());
+                sessionMap.put("status", session.getStatus().name());
+                response.put("session", sessionMap);
+
+                List<Map<String, Object>> recs = new java.util.ArrayList<>();
+                for (AttendanceRecord r : coreService.getRecordsForSession(session.getId())) {
+                    Map<String, Object> recMap = new HashMap<>();
+                    recMap.put("studentId", r.getStudent().getId());
+                    recMap.put("status", r.getStatus());
+                    recs.add(recMap);
+                }
+                response.put("records", recs);
             } else {
                 response.put("exists", false);
             }
