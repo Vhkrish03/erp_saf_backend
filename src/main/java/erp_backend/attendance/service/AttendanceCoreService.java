@@ -18,6 +18,11 @@ import erp_backend.attendance.repository.AttendanceRecordRepository;
 import erp_backend.attendance.repository.AttendanceSessionRepository;
 import erp_backend.entity.Student;
 import erp_backend.repository.StudentRepository;
+import erp_backend.repository.SubjectRepository;
+import erp_backend.entity.Subject;
+import erp_backend.attendance.dto.StudentAttendanceSummaryDTO;
+import erp_backend.attendance.dto.StudentSubjectAttendanceDTO;
+import java.util.ArrayList;
 
 import erp_backend.academics.entity.FacultySubjectAssignment;
 import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
@@ -37,6 +42,7 @@ public class AttendanceCoreService {
     private final FacultySubjectAssignmentRepository assignmentRepo;
     private final AttendanceDelegationRepository delegationRepo;
     private final ClassInchargeAssignmentRepository inchargeRepo;
+    private final SubjectRepository subjectRepo;
 
     public AttendanceCoreService(
             AttendanceSessionRepository sessionRepo,
@@ -46,7 +52,8 @@ public class AttendanceCoreService {
             StudentRepository studentRepo,
             FacultySubjectAssignmentRepository assignmentRepo,
             AttendanceDelegationRepository delegationRepo,
-            ClassInchargeAssignmentRepository inchargeRepo) {
+            ClassInchargeAssignmentRepository inchargeRepo,
+            SubjectRepository subjectRepo) {
         this.sessionRepo = sessionRepo;
         this.recordRepo = recordRepo;
         this.auditRepo = auditRepo;
@@ -55,6 +62,7 @@ public class AttendanceCoreService {
         this.assignmentRepo = assignmentRepo;
         this.delegationRepo = delegationRepo;
         this.inchargeRepo = inchargeRepo;
+        this.subjectRepo = subjectRepo;
     }
 
     @Transactional
@@ -175,6 +183,74 @@ public class AttendanceCoreService {
 
     public List<AttendanceRecord> getStudentAttendance(String studentId) {
         return recordRepo.findByStudentId(studentId);
+    }
+
+    public StudentAttendanceSummaryDTO getStudentAttendanceSummary(String studentId, String academicYear) {
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+
+        int semester = 1;
+        try {
+            semester = Integer.parseInt(student.getSemester());
+        } catch (NumberFormatException e) {
+            // fallback
+        }
+
+        List<Subject> subjects = subjectRepo.findByDepartmentAndYearAndSemester(
+                student.getDepartment(), student.getYear(), semester);
+
+        StudentAttendanceSummaryDTO summary = new StudentAttendanceSummaryDTO();
+        List<StudentSubjectAttendanceDTO> subDtoList = new ArrayList<>();
+
+        int totalHeld = 0;
+        int totalAttended = 0;
+        List<AttendanceRecord> allStudentRecords = recordRepo.findByStudentId(studentId);
+
+        for (Subject sub : subjects) {
+            // Find all sessions for the subject in this class
+            List<AttendanceSession> subjectSessions = sessionRepo.findByDepartmentAndYearAndSectionAndSubject(
+                    student.getDepartment(), student.getYear(), student.getSection(), sub.getName());
+
+            // Filter out DRAFT or REJECTED sessions
+            List<AttendanceSession> validSessions = subjectSessions.stream()
+                    .filter(s -> s.getStatus() == AttendanceStatus.PUBLISHED ||
+                            s.getStatus() == AttendanceStatus.ADMIN_VERIFIED ||
+                            s.getStatus() == AttendanceStatus.SUBMITTED)
+                    .toList();
+
+            int classesHeld = validSessions.size();
+
+            // Count how many of these valid sessions the student was PRESENT
+            int classesAttended = 0;
+            for (AttendanceSession s : validSessions) {
+                boolean isPresent = allStudentRecords.stream()
+                        .anyMatch(r -> r.getAttendanceSession().getId().equals(s.getId())
+                                && ("PRESENT".equalsIgnoreCase(r.getStatus()) || "OD".equalsIgnoreCase(r.getStatus())));
+                if (isPresent) {
+                    classesAttended++;
+                }
+            }
+
+            StudentSubjectAttendanceDTO dto = new StudentSubjectAttendanceDTO();
+            dto.setSubjectCode(sub.getCode());
+            dto.setSubjectName(sub.getName());
+            dto.setFaculty(sub.getFaculty());
+            dto.setClassesHeld(classesHeld);
+            dto.setClassesAttended(classesAttended);
+            dto.setAttendancePercent(classesHeld == 0 ? 0.0 : ((double) classesAttended / classesHeld) * 100);
+
+            subDtoList.add(dto);
+
+            totalHeld += classesHeld;
+            totalAttended += classesAttended;
+        }
+
+        summary.setSubjects(subDtoList);
+        summary.setTotalClassesHeld(totalHeld);
+        summary.setTotalClassesAttended(totalAttended);
+        summary.setOverallPercentage(totalHeld == 0 ? 0.0 : ((double) totalAttended / totalHeld) * 100);
+
+        return summary;
     }
 
     public List<FacultySubjectAssignment> getTeacherAssignments(String employeeId) {

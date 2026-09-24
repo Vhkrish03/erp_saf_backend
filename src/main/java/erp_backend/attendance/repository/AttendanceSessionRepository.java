@@ -18,4 +18,7 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
 
     AttendanceSession findByDepartmentAndYearAndSectionAndSubjectAndDateAndPeriod(
             String department, String year, String section, String subject, LocalDate date, String period);
+
+    List<AttendanceSession> findByDepartmentAndYearAndSectionAndSubject(
+            String department, String year, String section, String subject);
 }

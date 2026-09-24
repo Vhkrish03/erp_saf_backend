@@ -129,4 +129,17 @@ public class AttendanceCoreController {
         response.put("percentage", percentage);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/student/{studentId}/summary")
+    public ResponseEntity<?> getStudentAttendanceSummary(
+            @PathVariable String studentId,
+            @RequestParam(required = false) String academicYear) {
+        try {
+            erp_backend.attendance.dto.StudentAttendanceSummaryDTO summary = coreService
+                    .getStudentAttendanceSummary(studentId, academicYear);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
+        }
+    }
 }
