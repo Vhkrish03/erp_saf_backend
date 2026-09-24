@@ -71,10 +71,11 @@ public class ProgressCardService {
                                 .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
 
                 String academicYear = resolveAcademicYear();
+                String internalSem = normalizeSemester(semester);
                 Map<String, Object> card = new LinkedHashMap<>();
 
                 card.put("studentInfo", buildStudentInfo(student));
-                card.put("verificationTrail", buildVerificationTrail(student, semester));
+                card.put("verificationTrail", buildVerificationTrail(student, internalSem));
 
                 // Official semester exam result — PUBLISHED only
                 Optional<ExamCellResult> publishedResult = examCellResultRepository
@@ -83,13 +84,13 @@ public class ProgressCardService {
 
                 // Internal assessment — FINALIZED (DEAN_SUBMITTED) only for student view
                 card.put("internalPerformance",
-                                buildInternalPerformance(student, semester, academicYear, true));
+                                buildInternalPerformance(student, internalSem, academicYear, true));
 
                 card.put("cgpa", calculateCgpa(studentId));
                 card.put("overallProgress", buildOverallProgress(studentId));
                 card.put("performanceOverview",
-                                buildPerformanceOverview(studentId, semester, academicYear));
-                card.put("remarks", buildRemarksSection(studentId, semester, academicYear));
+                                buildPerformanceOverview(studentId, internalSem, academicYear));
+                card.put("remarks", buildRemarksSection(studentId, internalSem, academicYear));
 
                 return card;
         }
@@ -103,10 +104,11 @@ public class ProgressCardService {
                                 .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
 
                 String academicYear = resolveAcademicYear();
+                String internalSem = normalizeSemester(semester);
                 Map<String, Object> card = new LinkedHashMap<>();
 
                 card.put("studentInfo", buildStudentInfo(student));
-                card.put("verificationTrail", buildVerificationTrail(student, semester));
+                card.put("verificationTrail", buildVerificationTrail(student, internalSem));
 
                 // Show any result, not just published
                 Optional<ExamCellResult> anyResult = examCellResultRepository
@@ -116,13 +118,13 @@ public class ProgressCardService {
 
                 // All assessment data, all statuses
                 card.put("internalPerformance",
-                                buildInternalPerformance(student, semester, academicYear, false));
+                                buildInternalPerformance(student, internalSem, academicYear, false));
 
                 card.put("cgpa", calculateCgpa(studentId));
                 card.put("overallProgress", buildOverallProgress(studentId));
                 card.put("performanceOverview",
-                                buildPerformanceOverview(studentId, semester, academicYear));
-                card.put("remarks", buildRemarksSection(studentId, semester, academicYear));
+                                buildPerformanceOverview(studentId, internalSem, academicYear));
+                card.put("remarks", buildRemarksSection(studentId, internalSem, academicYear));
 
                 return card;
         }
@@ -134,15 +136,17 @@ public class ProgressCardService {
         public List<Map<String, Object>> getClassProgress(
                         String department, String semester, String section, String academicYear) {
 
-                List<Student> students = studentRepository.findByDepartmentAndSemesterAndSection(department, semester,
+                String internalSem = normalizeSemester(semester);
+                List<Student> students = studentRepository.findByDepartmentAndSemesterAndSection(department,
+                                internalSem,
                                 section);
 
                 List<Assessment> weeklyAll = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
-                                department, semester, section, "WEEKLY");
+                                department, internalSem, section, "WEEKLY");
                 List<Assessment> iatAll = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
-                                department, semester, section, "IAT");
+                                department, internalSem, section, "IAT");
                 List<Assessment> modelAll = assessmentRepository.findByDepartmentAndSemesterAndSectionAndType(
-                                department, semester, section, "MODEL");
+                                department, internalSem, section, "MODEL");
 
                 return students.stream().map(student -> {
                         Map<String, Object> row = new LinkedHashMap<>();
@@ -152,7 +156,7 @@ public class ProgressCardService {
 
                         List<InternalMark> internalMarks = internalMarkRepository
                                         .findByStudentIdAndSemesterAndAcademicYear(
-                                                        student.getId(), semester, academicYear);
+                                                        student.getId(), internalSem, academicYear);
                         row.put("internalMarks", internalMarks);
 
                         long weeklyFinalized = weeklyAll.stream()
@@ -212,6 +216,8 @@ public class ProgressCardService {
         public InternalMark calculateAndStoreInternalMark(
                         String studentId, Long subjectId, String semester, String academicYear) {
 
+                String internalSem = normalizeSemester(semester);
+
                 Student student = studentRepository.findById(studentId)
                                 .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
                 Subject subject = subjectRepository.findById(subjectId)
@@ -219,13 +225,13 @@ public class ProgressCardService {
 
                 InternalMarkConfig config = internalMarkConfigRepository
                                 .findByDepartmentAndSemesterAndAcademicYearAndIsActive(
-                                                student.getDepartment(), semester, academicYear, true)
+                                                student.getDepartment(), internalSem, academicYear, true)
                                 .orElse(null);
 
                 // FINALIZED weekly assessments only
                 List<Assessment> weeklyList = assessmentRepository
                                 .findByDepartmentAndSemesterAndSectionAndTypeAndAcademicYear(
-                                                student.getDepartment(), semester, student.getSection(), "WEEKLY",
+                                                student.getDepartment(), internalSem, student.getSection(), "WEEKLY",
                                                 academicYear)
                                 .stream()
                                 .filter(a -> List.of("DEAN_APPROVED", "PUBLISHED")
@@ -251,9 +257,9 @@ public class ProgressCardService {
                 }
 
                 double iat1Total = computeIatWeighted(
-                                studentId, subjectId, "iat 1", student, semester, academicYear);
+                                studentId, subjectId, "iat 1", student, internalSem, academicYear);
                 double iat2Total = computeIatWeighted(
-                                studentId, subjectId, "iat 2", student, semester, academicYear);
+                                studentId, subjectId, "iat 2", student, internalSem, academicYear);
 
                 double wt = config != null ? config.getWeeklyTestWeightage() : 0.20;
                 double w1 = config != null ? config.getIat1Weightage() : 0.40;
@@ -268,7 +274,7 @@ public class ProgressCardService {
 
                 InternalMark im = internalMarkRepository
                                 .findByStudentIdAndSubjectIdAndSemesterAndAcademicYear(
-                                                studentId, subjectId, semester, academicYear)
+                                                studentId, subjectId, internalSem, academicYear)
                                 .orElse(new InternalMark());
 
                 im.setStudentId(studentId);
@@ -276,7 +282,7 @@ public class ProgressCardService {
                 im.setSubjectCode(subject.getCode());
                 im.setSubjectName(subject.getName());
                 im.setAcademicYear(academicYear);
-                im.setSemester(semester);
+                im.setSemester(internalSem);
                 im.setDepartment(student.getDepartment());
                 im.setSection(student.getSection());
                 im.setWeeklyTestAverage(weeklyAvg);
@@ -681,5 +687,27 @@ public class ProgressCardService {
                 m.put("SEMINAR", null);
                 m.put("QUIZ", null);
                 return m;
+        }
+
+        private String normalizeSemester(String sem) {
+                if (sem == null)
+                        return sem;
+                if (sem.equalsIgnoreCase("S1"))
+                        return "I";
+                if (sem.equalsIgnoreCase("S2"))
+                        return "II";
+                if (sem.equalsIgnoreCase("S3"))
+                        return "III";
+                if (sem.equalsIgnoreCase("S4"))
+                        return "IV";
+                if (sem.equalsIgnoreCase("S5"))
+                        return "V";
+                if (sem.equalsIgnoreCase("S6"))
+                        return "VI";
+                if (sem.equalsIgnoreCase("S7"))
+                        return "VII";
+                if (sem.equalsIgnoreCase("S8"))
+                        return "VIII";
+                return sem;
         }
 }
