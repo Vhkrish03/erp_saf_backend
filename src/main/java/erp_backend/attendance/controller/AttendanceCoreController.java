@@ -142,4 +142,14 @@ public class AttendanceCoreController {
             return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/hod/analytics")
+    public ResponseEntity<?> getHodAnalytics(@RequestParam String department) {
+        try {
+            Map<String, Object> analytics = coreService.getHodAnalytics(department);
+            return ResponseEntity.ok(analytics);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
