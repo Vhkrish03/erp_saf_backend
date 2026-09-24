@@ -256,9 +256,9 @@ public class ProgressCardService {
                 }
 
                 double iat1Total = computeIatWeighted(
-                                studentId, subjectId, "iat 1", student, internalSem, academicYear);
+                                studentId, subjectId, "iat1", student, internalSem, academicYear);
                 double iat2Total = computeIatWeighted(
-                                studentId, subjectId, "iat 2", student, internalSem, academicYear);
+                                studentId, subjectId, "iat2", student, internalSem, academicYear);
 
                 double wt = config != null ? config.getWeeklyTestWeightage() : 0.20;
                 double w1 = config != null ? config.getIat1Weightage() : 0.40;
@@ -526,9 +526,9 @@ public class ProgressCardService {
                                         !iat.getSubject().getCode().equalsIgnoreCase(subject.getCode()))
                                 continue;
 
-                        String nameLower = iat.getName().toLowerCase();
-                        boolean isIat1 = nameLower.contains("iat 1") || nameLower.contains("iat-1");
-                        boolean isIat2 = nameLower.contains("iat 2") || nameLower.contains("iat-2");
+                        String nameLower = iat.getName().toLowerCase().replaceAll("[\\s\\-]+", "");
+                        boolean isIat1 = nameLower.contains("iat1");
+                        boolean isIat2 = nameLower.contains("iat2");
 
                         List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(iat.getId(),
                                         studentId);
@@ -584,7 +584,8 @@ public class ProgressCardService {
 
                 return list.stream()
                                 .filter(a -> a.getSubject() != null && a.getSubject().getId().equals(subjectId))
-                                .filter(a -> a.getName().toLowerCase().contains(iatNameKeyword))
+                                .filter(a -> a.getName().toLowerCase().replaceAll("[\\s\\-]+", "")
+                                                .contains(iatNameKeyword))
                                 .mapToDouble(iat -> markRepository
                                                 .findByAssessmentIdAndStudentId(iat.getId(), studentId)
                                                 .stream().mapToDouble(mk -> {
