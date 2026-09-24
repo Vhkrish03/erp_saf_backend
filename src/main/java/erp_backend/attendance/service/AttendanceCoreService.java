@@ -199,8 +199,21 @@ public class AttendanceCoreService {
             // fallback
         }
 
+        String rawYear = student.getYear() != null ? student.getYear().trim().toLowerCase() : "";
+        String normalizedYear = rawYear;
+        // Normalize to pure numeric strings which are mostly stored in
+        // Subject/Curriculum
+        if (rawYear.equals("1st year") || rawYear.equals("year 1") || rawYear.equals("1st"))
+            normalizedYear = "1";
+        if (rawYear.equals("2nd year") || rawYear.equals("year 2") || rawYear.equals("2nd"))
+            normalizedYear = "2";
+        if (rawYear.equals("3rd year") || rawYear.equals("year 3") || rawYear.equals("3rd"))
+            normalizedYear = "3";
+        if (rawYear.equals("4th year") || rawYear.equals("year 4") || rawYear.equals("4th"))
+            normalizedYear = "4";
+
         List<Subject> subjects = subjectRepo.findByDepartmentAndYearAndSemester(
-                student.getDepartment(), student.getYear(), semester);
+                student.getDepartment(), normalizedYear, semester);
 
         StudentAttendanceSummaryDTO summary = new StudentAttendanceSummaryDTO();
         List<StudentSubjectAttendanceDTO> subDtoList = new ArrayList<>();
@@ -211,8 +224,15 @@ public class AttendanceCoreService {
 
         for (Subject sub : subjects) {
             // Find all sessions for the subject in this class
+            // Check both rawYear and normalizedYear to aggressively match all potential
+            // session records
             List<AttendanceSession> subjectSessions = sessionRepo.findByDepartmentAndYearAndSectionAndSubject(
                     student.getDepartment(), student.getYear(), student.getSection(), sub.getName());
+
+            if (subjectSessions.isEmpty() && !normalizedYear.equals(student.getYear())) {
+                subjectSessions = sessionRepo.findByDepartmentAndYearAndSectionAndSubject(
+                        student.getDepartment(), normalizedYear, student.getSection(), sub.getName());
+            }
 
             // Filter out DRAFT or REJECTED sessions
             List<AttendanceSession> validSessions = subjectSessions.stream()
