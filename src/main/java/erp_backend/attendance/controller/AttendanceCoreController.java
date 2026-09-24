@@ -82,6 +82,71 @@ public class AttendanceCoreController {
         return ResponseEntity.ok(sessions);
     }
 
+    @GetMapping("/reports/department/{department}")
+    public ResponseEntity<?> getAttendanceReportsForHod(@PathVariable String department) {
+        try {
+            List<AttendanceSession> sessions = coreService.getDepartmentSessions(department);
+            return ResponseEntity.ok(mapSessionsToReports(sessions));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/reports/admin/all")
+    public ResponseEntity<?> getAllAttendanceReportsForAdmin() {
+        try {
+            List<AttendanceSession> sessions = coreService.getAllSessions();
+            return ResponseEntity.ok(mapSessionsToReports(sessions));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private List<Map<String, Object>> mapSessionsToReports(List<AttendanceSession> sessions) throws Exception {
+        List<Map<String, Object>> reports = new java.util.ArrayList<>();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        for (AttendanceSession session : sessions) {
+            if (session.getStatus() == erp_backend.attendance.entity.AttendanceStatus.DRAFT) {
+                continue;
+            }
+
+            Map<String, Object> report = new HashMap<>();
+            report.put("subject", session.getSubject());
+            report.put("section", session.getSection());
+            report.put("studentYear", session.getYear());
+            report.put("date", session.getDate() != null ? session.getDate().toString() : "");
+            report.put("period", session.getPeriod());
+            report.put("submittedBy", session.getSubmittedBy());
+            report.put("status", session.getStatus().name());
+
+            List<AttendanceRecord> records = coreService.getRecordsForSession(session.getId());
+            int presentCount = (int) records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
+            int absentCount = records.size() - presentCount;
+
+            report.put("presentCount", presentCount);
+            report.put("absentCount", absentCount);
+            report.put("totalStudents", records.size());
+
+            List<Map<String, Object>> recs = new java.util.ArrayList<>();
+            for (AttendanceRecord r : records) {
+                Map<String, Object> rc = new HashMap<>();
+                if (r.getStudent() != null) {
+                    rc.put("studentName", r.getStudent().getName());
+                    rc.put("rollNumber", r.getStudent().getRollNumber());
+                } else {
+                    rc.put("studentName", "Unknown");
+                    rc.put("rollNumber", "");
+                }
+                rc.put("isPresent", "PRESENT".equalsIgnoreCase(r.getStatus()));
+                recs.add(rc);
+            }
+            report.put("studentRecordsJson", mapper.writeValueAsString(recs));
+            reports.add(report);
+        }
+        return reports;
+    }
+
     @PutMapping("/admin/verify/{sessionId}")
     public ResponseEntity<?> verifySession(@PathVariable Long sessionId, @RequestBody Map<String, Object> payload) {
         try {
