@@ -117,6 +117,16 @@ public class AssessmentController {
         }
     }
 
+    @GetMapping("/hod/pending-classes")
+    public ResponseEntity<List<Map<String, String>>> getPendingHodClasses(
+            @RequestParam String department) {
+        try {
+            return ResponseEntity.ok(assessmentService.getPendingHodClasses(department));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PostMapping("/{assessmentId}/verify/hod")
     public ResponseEntity<Assessment> verifyHod(
             @PathVariable Long assessmentId,

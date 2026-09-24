@@ -116,6 +116,32 @@ public class AssessmentService {
         return assessmentRepository.findById(id);
     }
 
+    public List<Map<String, String>> getPendingHodClasses(String department) {
+        List<String> statuses = Arrays.asList("SUBMITTED", "CLASS_INCHARGE_VERIFIED", "HOD_VERIFIED", "PUBLISHED");
+        List<Assessment> assessments = new ArrayList<>();
+        for (String st : statuses) {
+            assessments.addAll(assessmentRepository.findByDepartmentAndStatus(department, st));
+        }
+
+        Set<String> uniqueClasses = new HashSet<>();
+        List<Map<String, String>> result = new ArrayList<>();
+
+        for (Assessment a : assessments) {
+            String key = a.getSemester() + "-" + a.getSection();
+            if (!uniqueClasses.contains(key)) {
+                uniqueClasses.add(key);
+                Map<String, String> cls = new HashMap<>();
+                cls.put("department", a.getDepartment());
+                cls.put("year", String.valueOf(a.getYear()));
+                cls.put("semester", a.getSemester());
+                cls.put("section", a.getSection());
+                cls.put("status", a.getStatus());
+                result.add(cls);
+            }
+        }
+        return result;
+    }
+
     // Get students in the target class
     public List<Student> getStudentsForAssessment(Long assessmentId) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
