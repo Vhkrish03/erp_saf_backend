@@ -138,6 +138,15 @@ public class AssessmentController {
         }
     }
 
+    @PostMapping("/{assessmentId}/publish")
+    public ResponseEntity<Assessment> publishAssessment(@PathVariable Long assessmentId) {
+        try {
+            return ResponseEntity.ok(assessmentService.publishAssessment(assessmentId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/consolidated")
     public ResponseEntity<Map<String, Object>> getConsolidatedMarksReport(
             @RequestParam String department,
