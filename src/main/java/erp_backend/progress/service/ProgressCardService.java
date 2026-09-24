@@ -520,6 +520,7 @@ public class ProgressCardService {
                 Map<String, Object> iat2Map = defaultIatMap();
                 double iat1W = 0, iat2W = 0;
                 String iat1Status = "DRAFT", iat2Status = "DRAFT";
+                boolean iat1Found = false, iat2Found = false;
 
                 for (Assessment iat : iatList) {
                         if (iat.getSubject() == null ||
@@ -529,6 +530,13 @@ public class ProgressCardService {
                         String nameLower = iat.getName().toLowerCase().replaceAll("[\\s\\-]+", "");
                         boolean isIat1 = nameLower.contains("iat1");
                         boolean isIat2 = nameLower.contains("iat2");
+
+                        if (!isIat1 && !isIat2) {
+                                if (!iat1Found)
+                                        isIat1 = true;
+                                else
+                                        isIat2 = true;
+                        }
 
                         List<AssessmentMark> marks = markRepository.findByAssessmentIdAndStudentId(iat.getId(),
                                         studentId);
@@ -546,11 +554,12 @@ public class ProgressCardService {
                                 iat1Map = compMap;
                                 iat1W = ws;
                                 iat1Status = iat.getStatus();
-                        }
-                        if (isIat2) {
+                                iat1Found = true;
+                        } else if (isIat2) {
                                 iat2Map = compMap;
                                 iat2W = ws;
                                 iat2Status = iat.getStatus();
+                                iat2Found = true;
                         }
                 }
 
