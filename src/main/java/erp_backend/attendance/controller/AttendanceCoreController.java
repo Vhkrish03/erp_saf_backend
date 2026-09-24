@@ -152,4 +152,30 @@ public class AttendanceCoreController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAttendanceSession(
+            @RequestParam String department,
+            @RequestParam String year,
+            @RequestParam String section,
+            @RequestParam String subject,
+            @RequestParam String period,
+            @RequestParam String date) {
+        try {
+            java.time.LocalDate d = java.time.LocalDate.parse(date);
+            AttendanceSession session = coreService.checkSessionExists(department, year, section, subject, period, d);
+
+            Map<String, Object> response = new HashMap<>();
+            if (session != null) {
+                response.put("exists", true);
+                response.put("session", session);
+                response.put("records", coreService.getRecordsForSession(session.getId()));
+            } else {
+                response.put("exists", false);
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

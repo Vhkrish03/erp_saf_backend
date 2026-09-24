@@ -274,6 +274,12 @@ public class AttendanceCoreService {
                 .toList();
     }
 
+    public AttendanceSession checkSessionExists(String dept, String yr, String sec, String sub, String period,
+            java.time.LocalDate d) {
+        return sessionRepo.findByDepartmentAndYearAndSectionAndSubjectAndDateAndPeriod(
+                dept, yr, sec, sub, d, period);
+    }
+
     public Map<String, Object> getHodAnalytics(String department) {
         List<AttendanceSession> deptSessions = sessionRepo.findByDepartment(department);
 
