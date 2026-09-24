@@ -360,10 +360,11 @@ public class AssessmentService {
                 .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
 
         if (approve) {
-            assessment.setStatus("DEAN_APPROVED"); // Auto-bypass Dean for now
+            assessment.setStatus("PUBLISHED"); // Auto-bypass Dean and Publish immediately
             workflow.setHodStatus("VERIFIED");
-            workflow.setDeanStatus("APPROVED"); // Auto-approve
+            workflow.setDeanStatus("PUBLISHED"); // Auto-approve and publish
             workflow.setApprovedAt(LocalDateTime.now());
+            workflow.setLockedAt(LocalDateTime.now());
         } else {
             assessment.setStatus("DRAFT");
             workflow.setFacultyStatus("DRAFT");
