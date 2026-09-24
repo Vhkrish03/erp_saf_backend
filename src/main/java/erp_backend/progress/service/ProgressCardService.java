@@ -341,7 +341,7 @@ public class ProgressCardService {
                 String overallStatus;
                 if (total == 0)
                         overallStatus = "NO_DATA";
-                else if (deanFinalized == total)
+                else if (deanFinalized > 0)
                         overallStatus = "FINALIZED";
                 else if (hodApproved > 0)
                         overallStatus = "HOD_APPROVED";

@@ -383,7 +383,11 @@ public class AssessmentService {
                 .orElseThrow(() -> new IllegalArgumentException("Assessment not found."));
 
         AssessmentWorkflow workflow = workflowRepository.findByAssessmentId(assessmentId)
-                .orElseThrow(() -> new IllegalStateException("Workflow track not found."));
+                .orElseGet(() -> {
+                    AssessmentWorkflow wf = new AssessmentWorkflow();
+                    wf.setAssessment(assessment);
+                    return wf;
+                });
 
         if (approve) {
             assessment.setStatus("PUBLISHED"); // Auto-bypass Dean and Publish immediately
