@@ -250,7 +250,11 @@ public class ExamCellController {
                 // semesters in DB
                 String romanSemester = semester;
                 if (semester != null) {
-                    switch (semester.trim().toUpperCase()) {
+                    String semStr = semester.trim().toUpperCase();
+                    if (semStr.startsWith("SEMESTER ")) {
+                        semStr = semStr.replace("SEMESTER ", "").trim();
+                    }
+                    switch (semStr) {
                         case "S1":
                         case "1":
                             romanSemester = "I";
