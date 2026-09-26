@@ -91,6 +91,7 @@ public class AttendanceCoreController {
              List<Map<String, String>> studentData = new java.util.ArrayList<>();
              for (AttendanceRecord r : records) {
                  Map<String, String> sMap = new HashMap<>();
+                 sMap.put("studentId", r.getStudent().getId());
                  sMap.put("name", r.getStudent().getName());
                  sMap.put("rollNumber", r.getStudent().getRollNumber());
                  sMap.put("status", r.getStatus());
