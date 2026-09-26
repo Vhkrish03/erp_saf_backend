@@ -107,6 +107,43 @@ public class AttendanceCoreController {
         return ResponseEntity.ok(sessions);
     }
 
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAttendance(
+            @RequestParam String department,
+            @RequestParam String year,
+            @RequestParam String section,
+            @RequestParam String subject,
+            @RequestParam String period,
+            @RequestParam String date) {
+        try {
+            java.time.LocalDate localDate = java.time.LocalDate.parse(date);
+            AttendanceSession session = coreService.getSessionDetails(department, year, section, subject, localDate, period);
+            if (session != null) {
+                List<AttendanceRecord> records = coreService.getRecordsForSession(session.getId());
+                List<Map<String, Object>> mappedRecords = new java.util.ArrayList<>();
+                for (AttendanceRecord r : records) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("studentId", r.getStudent().getId());
+                    map.put("status", r.getStatus());
+                    mappedRecords.add(map);
+                }
+                
+                Map<String, Object> sessionMap = new HashMap<>();
+                sessionMap.put("status", session.getStatus().name());
+                
+                return ResponseEntity.ok(Map.of(
+                        "exists", true,
+                        "session", sessionMap,
+                        "records", mappedRecords
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of("exists", false));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PutMapping("/admin/verify/{sessionId}")
     public ResponseEntity<?> verifySession(@PathVariable Long sessionId, @RequestBody Map<String, Object> payload) {
         try {

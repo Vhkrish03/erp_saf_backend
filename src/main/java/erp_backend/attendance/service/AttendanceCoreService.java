@@ -130,6 +130,12 @@ public class AttendanceCoreService {
         return sessionRepo.findById(id).orElse(null);
     }
 
+    public AttendanceSession getSessionDetails(String department, String year, String section, String subject,
+            java.time.LocalDate date, String period) {
+        return sessionRepo.findByDepartmentAndYearAndSectionAndSubjectAndDateAndPeriod(department, year, section,
+                subject, date, period);
+    }
+
     public List<AttendanceRecord> getRecordsForSession(Long sessionId) {
         return recordRepo.findByAttendanceSessionId(sessionId);
     }
