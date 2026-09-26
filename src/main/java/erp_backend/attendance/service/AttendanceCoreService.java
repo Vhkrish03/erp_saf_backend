@@ -2,9 +2,6 @@ package erp_backend.attendance.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +18,6 @@ import erp_backend.attendance.repository.AttendanceRecordRepository;
 import erp_backend.attendance.repository.AttendanceSessionRepository;
 import erp_backend.entity.Student;
 import erp_backend.repository.StudentRepository;
-import erp_backend.repository.SubjectRepository;
-import erp_backend.entity.Subject;
-import erp_backend.attendance.dto.StudentAttendanceSummaryDTO;
-import erp_backend.attendance.dto.StudentSubjectAttendanceDTO;
-import java.util.ArrayList;
 
 import erp_backend.academics.entity.FacultySubjectAssignment;
 import erp_backend.academics.repository.FacultySubjectAssignmentRepository;
@@ -45,7 +37,6 @@ public class AttendanceCoreService {
     private final FacultySubjectAssignmentRepository assignmentRepo;
     private final AttendanceDelegationRepository delegationRepo;
     private final ClassInchargeAssignmentRepository inchargeRepo;
-    private final SubjectRepository subjectRepo;
 
     public AttendanceCoreService(
             AttendanceSessionRepository sessionRepo,
@@ -55,8 +46,7 @@ public class AttendanceCoreService {
             StudentRepository studentRepo,
             FacultySubjectAssignmentRepository assignmentRepo,
             AttendanceDelegationRepository delegationRepo,
-            ClassInchargeAssignmentRepository inchargeRepo,
-            SubjectRepository subjectRepo) {
+            ClassInchargeAssignmentRepository inchargeRepo) {
         this.sessionRepo = sessionRepo;
         this.recordRepo = recordRepo;
         this.auditRepo = auditRepo;
@@ -65,7 +55,6 @@ public class AttendanceCoreService {
         this.assignmentRepo = assignmentRepo;
         this.delegationRepo = delegationRepo;
         this.inchargeRepo = inchargeRepo;
-        this.subjectRepo = subjectRepo;
     }
 
     @Transactional
@@ -188,94 +177,6 @@ public class AttendanceCoreService {
         return recordRepo.findByStudentId(studentId);
     }
 
-    public StudentAttendanceSummaryDTO getStudentAttendanceSummary(String studentId, String academicYear) {
-        Student student = studentRepo.findById(studentId)
-                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
-
-        int semester = 1;
-        try {
-            semester = Integer.parseInt(student.getSemester());
-        } catch (NumberFormatException e) {
-            // fallback
-        }
-
-        String rawYear = student.getYear() != null ? student.getYear().trim().toLowerCase() : "";
-        String normalizedYear = rawYear;
-        // Normalize to pure numeric strings which are mostly stored in
-        // Subject/Curriculum
-        if (rawYear.equals("1st year") || rawYear.equals("year 1") || rawYear.equals("1st"))
-            normalizedYear = "1";
-        if (rawYear.equals("2nd year") || rawYear.equals("year 2") || rawYear.equals("2nd"))
-            normalizedYear = "2";
-        if (rawYear.equals("3rd year") || rawYear.equals("year 3") || rawYear.equals("3rd"))
-            normalizedYear = "3";
-        if (rawYear.equals("4th year") || rawYear.equals("year 4") || rawYear.equals("4th"))
-            normalizedYear = "4";
-
-        List<Subject> subjects = subjectRepo.findByDepartmentAndYearAndSemester(
-                student.getDepartment(), normalizedYear, semester);
-
-        StudentAttendanceSummaryDTO summary = new StudentAttendanceSummaryDTO();
-        List<StudentSubjectAttendanceDTO> subDtoList = new ArrayList<>();
-
-        int totalHeld = 0;
-        int totalAttended = 0;
-        List<AttendanceRecord> allStudentRecords = recordRepo.findByStudentId(studentId);
-
-        for (Subject sub : subjects) {
-            // Find all sessions for the subject in this class
-            // Check both rawYear and normalizedYear to aggressively match all potential
-            // session records
-            List<AttendanceSession> subjectSessions = sessionRepo.findByDepartmentAndYearAndSectionAndSubject(
-                    student.getDepartment(), student.getYear(), student.getSection(), sub.getName());
-
-            if (subjectSessions.isEmpty() && !normalizedYear.equals(student.getYear())) {
-                subjectSessions = sessionRepo.findByDepartmentAndYearAndSectionAndSubject(
-                        student.getDepartment(), normalizedYear, student.getSection(), sub.getName());
-            }
-
-            // Filter out DRAFT or REJECTED sessions
-            List<AttendanceSession> validSessions = subjectSessions.stream()
-                    .filter(s -> s.getStatus() == AttendanceStatus.FINALIZED ||
-                            s.getStatus() == AttendanceStatus.ADMIN_VERIFIED ||
-                            s.getStatus() == AttendanceStatus.SUBMITTED)
-                    .toList();
-
-            int classesHeld = validSessions.size();
-
-            // Count how many of these valid sessions the student was PRESENT
-            int classesAttended = 0;
-            for (AttendanceSession s : validSessions) {
-                boolean isPresent = allStudentRecords.stream()
-                        .anyMatch(r -> r.getAttendanceSession().getId().equals(s.getId())
-                                && ("PRESENT".equalsIgnoreCase(r.getStatus()) || "OD".equalsIgnoreCase(r.getStatus())));
-                if (isPresent) {
-                    classesAttended++;
-                }
-            }
-
-            StudentSubjectAttendanceDTO dto = new StudentSubjectAttendanceDTO();
-            dto.setSubjectCode(sub.getCode());
-            dto.setSubjectName(sub.getName());
-            dto.setFaculty(sub.getFaculty());
-            dto.setClassesHeld(classesHeld);
-            dto.setClassesAttended(classesAttended);
-            dto.setAttendancePercent(classesHeld == 0 ? 0.0 : ((double) classesAttended / classesHeld) * 100);
-
-            subDtoList.add(dto);
-
-            totalHeld += classesHeld;
-            totalAttended += classesAttended;
-        }
-
-        summary.setSubjects(subDtoList);
-        summary.setTotalClassesHeld(totalHeld);
-        summary.setTotalClassesAttended(totalAttended);
-        summary.setOverallPercentage(totalHeld == 0 ? 0.0 : ((double) totalAttended / totalHeld) * 100);
-
-        return summary;
-    }
-
     public List<FacultySubjectAssignment> getTeacherAssignments(String employeeId) {
         return assignmentRepo.findByTeacherEmployeeId(employeeId);
     }
@@ -292,64 +193,5 @@ public class AttendanceCoreService {
         return inchargeRepo.findByTeacher_EmployeeIdOrderByCreatedAtDesc(employeeId).stream()
                 .filter(ClassInchargeAssignment::isActive)
                 .toList();
-    }
-
-    public AttendanceSession checkSessionExists(String dept, String yr, String sec, String sub, String period,
-            java.time.LocalDate d) {
-        return sessionRepo.findByDepartmentAndYearAndSectionAndSubjectAndDateAndPeriod(
-                dept, yr, sec, sub, d, period);
-    }
-
-    public Map<String, Object> getHodAnalytics(String department) {
-        List<AttendanceSession> deptSessions = sessionRepo.findByDepartment(department);
-
-        List<AttendanceSession> validSessions = deptSessions.stream()
-                .filter(s -> s.getStatus() == AttendanceStatus.FINALIZED ||
-                        s.getStatus() == AttendanceStatus.ADMIN_VERIFIED ||
-                        s.getStatus() == AttendanceStatus.SUBMITTED)
-                .toList();
-
-        int totalSessions = validSessions.size();
-        int presentCount = 0;
-        int totalRecords = 0;
-
-        Map<String, Integer> yearPresent = new HashMap<>();
-        Map<String, Integer> yearTotal = new HashMap<>();
-
-        for (AttendanceSession session : validSessions) {
-            String y = session.getYear() != null ? session.getYear() : "Unknown";
-            List<AttendanceRecord> records = recordRepo.findByAttendanceSessionId(session.getId());
-            totalRecords += records.size();
-            for (AttendanceRecord r : records) {
-                yearTotal.put(y, yearTotal.getOrDefault(y, 0) + 1);
-                if ("PRESENT".equalsIgnoreCase(r.getStatus()) || "OD".equalsIgnoreCase(r.getStatus())) {
-                    presentCount++;
-                    yearPresent.put(y, yearPresent.getOrDefault(y, 0) + 1);
-                }
-            }
-        }
-
-        double overallPercent = totalRecords == 0 ? 0 : ((double) presentCount / totalRecords) * 100;
-
-        List<Map<String, Object>> yearTrends = new ArrayList<>();
-        for (String yr : yearTotal.keySet()) {
-            int yt = yearTotal.get(yr);
-            int yp = yearPresent.getOrDefault(yr, 0);
-            yearTrends.add(Map.of(
-                    "year", yr,
-                    "attendance", yt == 0 ? 0 : ((double) yp / yt) * 100,
-                    "totalRecords", yt));
-        }
-
-        Map<String, Object> analytics = new HashMap<>();
-        analytics.put("totalSessions", totalSessions);
-        analytics.put("overallAttendance", overallPercent);
-        analytics.put("department", department);
-        analytics.put("yearTrends", yearTrends);
-
-        // Shortages placeholder: count of students identified with shortages
-        analytics.put("shortageCount", 14); // Avoid intense DB load by calculating exact <75% count manually for now
-
-        return analytics;
     }
 }

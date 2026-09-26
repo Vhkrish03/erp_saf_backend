@@ -76,75 +76,35 @@ public class AttendanceCoreController {
         return ResponseEntity.ok(sessions);
     }
 
+    @GetMapping("/reports/department/{department}")
+    public ResponseEntity<?> getReportsForDepartment(@PathVariable String department) {
+        List<AttendanceSession> sessions = coreService.getDepartmentSessions(department);
+        List<Map<String, Object>> response = new java.util.ArrayList<>();
+        for (AttendanceSession session : sessions) {
+             List<AttendanceRecord> records = coreService.getRecordsForSession(session.getId());
+             long presentCount = records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
+             long absentCount = records.size() - presentCount;
+
+             Map<String, Object> map = new HashMap<>();
+             map.put("id", session.getId());
+             map.put("subject", session.getSubject());
+             map.put("section", session.getSection());
+             map.put("studentYear", session.getYear());
+             map.put("date", session.getDate() != null ? session.getDate().toString() : "");
+             map.put("presentCount", presentCount);
+             map.put("absentCount", absentCount);
+             map.put("totalStudents", records.size());
+             map.put("submittedBy", session.getSubmittedBy());
+             map.put("status", session.getStatus().name());
+             response.add(map);
+        }
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/admin/all")
     public ResponseEntity<?> getAllSessions() {
         List<AttendanceSession> sessions = coreService.getAllSessions();
         return ResponseEntity.ok(sessions);
-    }
-
-    @GetMapping("/reports/department/{department}")
-    public ResponseEntity<?> getAttendanceReportsForHod(@PathVariable String department) {
-        try {
-            List<AttendanceSession> sessions = coreService.getDepartmentSessions(department);
-            return ResponseEntity.ok(mapSessionsToReports(sessions));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/reports/admin/all")
-    public ResponseEntity<?> getAllAttendanceReportsForAdmin() {
-        try {
-            List<AttendanceSession> sessions = coreService.getAllSessions();
-            return ResponseEntity.ok(mapSessionsToReports(sessions));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    private List<Map<String, Object>> mapSessionsToReports(List<AttendanceSession> sessions) throws Exception {
-        List<Map<String, Object>> reports = new java.util.ArrayList<>();
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
-        for (AttendanceSession session : sessions) {
-            if (session.getStatus() == erp_backend.attendance.entity.AttendanceStatus.DRAFT) {
-                continue;
-            }
-
-            Map<String, Object> report = new HashMap<>();
-            report.put("subject", session.getSubject());
-            report.put("section", session.getSection());
-            report.put("studentYear", session.getYear());
-            report.put("date", session.getDate() != null ? session.getDate().toString() : "");
-            report.put("period", session.getPeriod());
-            report.put("submittedBy", session.getSubmittedBy());
-            report.put("status", session.getStatus().name());
-
-            List<AttendanceRecord> records = coreService.getRecordsForSession(session.getId());
-            int presentCount = (int) records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
-            int absentCount = records.size() - presentCount;
-
-            report.put("presentCount", presentCount);
-            report.put("absentCount", absentCount);
-            report.put("totalStudents", records.size());
-
-            List<Map<String, Object>> recs = new java.util.ArrayList<>();
-            for (AttendanceRecord r : records) {
-                Map<String, Object> rc = new HashMap<>();
-                if (r.getStudent() != null) {
-                    rc.put("studentName", r.getStudent().getName());
-                    rc.put("rollNumber", r.getStudent().getRollNumber());
-                } else {
-                    rc.put("studentName", "Unknown");
-                    rc.put("rollNumber", "");
-                }
-                rc.put("isPresent", "PRESENT".equalsIgnoreCase(r.getStatus()));
-                recs.add(rc);
-            }
-            report.put("studentRecordsJson", mapper.writeValueAsString(recs));
-            reports.add(report);
-        }
-        return reports;
     }
 
     @PutMapping("/admin/verify/{sessionId}")
@@ -193,66 +153,5 @@ public class AttendanceCoreController {
         double percentage = records.isEmpty() ? 0 : ((double) presentCount / records.size()) * 100;
         response.put("percentage", percentage);
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/student/{studentId}/summary")
-    public ResponseEntity<?> getStudentAttendanceSummary(
-            @PathVariable String studentId,
-            @RequestParam(required = false) String academicYear) {
-        try {
-            erp_backend.attendance.dto.StudentAttendanceSummaryDTO summary = coreService
-                    .getStudentAttendanceSummary(studentId, academicYear);
-            return ResponseEntity.ok(summary);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", "Error: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/hod/analytics")
-    public ResponseEntity<?> getHodAnalytics(@RequestParam String department) {
-        try {
-            Map<String, Object> analytics = coreService.getHodAnalytics(department);
-            return ResponseEntity.ok(analytics);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/check")
-    public ResponseEntity<?> checkAttendanceSession(
-            @RequestParam String department,
-            @RequestParam String year,
-            @RequestParam String section,
-            @RequestParam String subject,
-            @RequestParam String period,
-            @RequestParam String date) {
-        try {
-            java.time.LocalDate d = java.time.LocalDate.parse(date);
-            AttendanceSession session = coreService.checkSessionExists(department, year, section, subject, period, d);
-
-            Map<String, Object> response = new HashMap<>();
-            if (session != null) {
-                response.put("exists", true);
-
-                Map<String, Object> sessionMap = new HashMap<>();
-                sessionMap.put("id", session.getId());
-                sessionMap.put("status", session.getStatus().name());
-                response.put("session", sessionMap);
-
-                List<Map<String, Object>> recs = new java.util.ArrayList<>();
-                for (AttendanceRecord r : coreService.getRecordsForSession(session.getId())) {
-                    Map<String, Object> recMap = new HashMap<>();
-                    recMap.put("studentId", r.getStudent().getId());
-                    recMap.put("status", r.getStatus());
-                    recs.add(recMap);
-                }
-                response.put("records", recs);
-            } else {
-                response.put("exists", false);
-            }
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
     }
 }
