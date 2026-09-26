@@ -314,14 +314,14 @@ public class ExaminationService {
             throw new IllegalStateException("Student is not eligible for a hall ticket.");
         }
 
-        if (!"COE_APPROVED".equals(reg.getExamination().getApprovalStatus())) {
+        String apv = reg.getExamination().getApprovalStatus();
+        if (!"COE_APPROVED_PHASE3".equals(apv) && !"HALL_TICKETS_PUBLISHED".equals(apv) && !"COE_APPROVED".equals(apv)) {
             throw new IllegalStateException("Examination is not COE Approved yet.");
         }
-
-        if (!"VERIFIED".equals(reg.getVerificationStatus())) {
-            throw new IllegalStateException(
-                    "Hall ticket locked: examination fee payment is not manually verified by Exam Cell.");
-        }
+        
+        // Note: We no longer throw error for unverified payment here,
+        // because Exam Cell Admin needs to preview hall tickets for all students.
+        // The student-facing frontend handles restricting access for unpaid students.
 
         Examination exam = reg.getExamination();
         List<erp_backend.examcell.entity.ExamTimetable> timetable = getTimetableForExam(exam.getId());
