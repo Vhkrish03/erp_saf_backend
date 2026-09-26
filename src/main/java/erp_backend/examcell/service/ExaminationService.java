@@ -192,7 +192,18 @@ public class ExaminationService {
         if (tt.isEmpty()) {
             throw new IllegalStateException("Cannot submit: Timetable/Papers are empty.");
         }
-        exam.setApprovalStatus("SUBMITTED_TO_COE");
+        
+        String currentStatus = exam.getApprovalStatus();
+        if ("DRAFT".equals(currentStatus) || "COE_REJECTED_PHASE1".equals(currentStatus) || currentStatus == null) {
+            exam.setApprovalStatus("PENDING_PHASE1");
+        } else if ("COE_APPROVED_PHASE1".equals(currentStatus) || "COE_REJECTED_PHASE2".equals(currentStatus)) {
+            exam.setApprovalStatus("PENDING_PHASE2");
+        } else if ("FEE_PUBLISHED".equals(currentStatus) || "COE_REJECTED_PHASE3".equals(currentStatus)) {
+            exam.setApprovalStatus("PENDING_PHASE3");
+        } else {
+            // Unhandled or legacy, fallback to Phase 1
+            exam.setApprovalStatus("PENDING_PHASE1");
+        }
         return examinationRepository.save(exam);
     }
 
@@ -200,7 +211,16 @@ public class ExaminationService {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
 
-        exam.setApprovalStatus("COE_APPROVED");
+        if ("PENDING_PHASE1".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_APPROVED_PHASE1");
+        } else if ("PENDING_PHASE2".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_APPROVED_PHASE2");
+        } else if ("PENDING_PHASE3".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_APPROVED_PHASE3"); 
+        } else {
+           exam.setApprovalStatus("COE_APPROVED_PHASE1");
+        }
+        
         exam.setApprovedBy(performedBy);
         exam.setApprovedAt(LocalDateTime.now());
         return examinationRepository.save(exam);
@@ -209,8 +229,29 @@ public class ExaminationService {
     public Examination rejectByCoe(Long examId, String reason, String performedBy) {
         Examination exam = examinationRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
-        exam.setApprovalStatus("COE_REJECTED");
+                
+        if ("PENDING_PHASE1".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_REJECTED_PHASE1");
+        } else if ("PENDING_PHASE2".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_REJECTED_PHASE2");
+        } else if ("PENDING_PHASE3".equals(exam.getApprovalStatus())) {
+            exam.setApprovalStatus("COE_REJECTED_PHASE3");
+        } else {
+            exam.setApprovalStatus("COE_REJECTED_PHASE1");
+        }
+        
         exam.setRejectionReason(reason);
+        return examinationRepository.save(exam);
+    }
+    
+    public Examination publishEvent(Long examId, String newStatus, String performedBy) {
+        Examination exam = examinationRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Examination not found"));
+        // e.g., FEE_PUBLISHED, or HALL_TICKETS_PUBLISHED
+        exam.setApprovalStatus(newStatus); 
+        if ("HALL_TICKETS_PUBLISHED".equals(newStatus)) {
+             exam.setStatus("PUBLISHED");
+        }
         return examinationRepository.save(exam);
     }
 

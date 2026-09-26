@@ -542,6 +542,18 @@ public class ExamCellController {
         }
     }
 
+    @PostMapping("/examinations/{id}/publish-event")
+    public ResponseEntity<?> publishExaminationEvent(
+            @PathVariable Long id,
+            @RequestParam String newStatus,
+            @RequestParam String performedBy) {
+        try {
+            return ResponseEntity.ok(examinationService.publishEvent(id, newStatus, performedBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/examinations/{id}/approve")
     public ResponseEntity<?> approveExamination(
             @PathVariable Long id,
