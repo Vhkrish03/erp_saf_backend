@@ -485,7 +485,15 @@ public class ExamCellController {
 
             List<erp_backend.examcell.entity.Examination> all = examinationService.getAllExaminations();
             List<erp_backend.examcell.entity.Examination> visible = all.stream()
-                    .filter(e -> "COE_APPROVED".equals(e.getApprovalStatus()))
+                    .filter(e -> {
+                        String status = e.getApprovalStatus();
+                        return status != null && (
+                                status.equals("COE_APPROVED") || 
+                                status.equals("FEE_PUBLISHED") ||
+                                status.equals("COE_APPROVED_PHASE3") || 
+                                status.equals("HALL_TICKETS_PUBLISHED")
+                        );
+                    })
                     .filter(e -> normalizeDept(student.getDepartment()).equals(normalizeDept(e.getDepartment())))
                     .filter(e -> e.getSemesterName() == null || e.getSemesterName().isBlank() ||
                             normalizeSem(e.getSemesterName()).equals(normalizeSem(student.getSemester())))
