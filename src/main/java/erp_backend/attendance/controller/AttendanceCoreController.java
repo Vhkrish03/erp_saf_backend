@@ -79,11 +79,23 @@ public class AttendanceCoreController {
     @GetMapping("/reports/department/{department}")
     public ResponseEntity<?> getReportsForDepartment(@PathVariable String department) {
         List<AttendanceSession> sessions = coreService.getDepartmentSessions(department);
+        // Sort sessions from newest to oldest
+        sessions.sort((a, b) -> b.getId().compareTo(a.getId()));
+        
         List<Map<String, Object>> response = new java.util.ArrayList<>();
         for (AttendanceSession session : sessions) {
              List<AttendanceRecord> records = coreService.getRecordsForSession(session.getId());
              long presentCount = records.stream().filter(r -> "PRESENT".equalsIgnoreCase(r.getStatus())).count();
              long absentCount = records.size() - presentCount;
+
+             List<Map<String, String>> studentData = new java.util.ArrayList<>();
+             for (AttendanceRecord r : records) {
+                 Map<String, String> sMap = new HashMap<>();
+                 sMap.put("name", r.getStudent().getName());
+                 sMap.put("rollNumber", r.getStudent().getRollNumber());
+                 sMap.put("status", r.getStatus());
+                 studentData.add(sMap);
+             }
 
              Map<String, Object> map = new HashMap<>();
              map.put("id", session.getId());
@@ -91,11 +103,13 @@ public class AttendanceCoreController {
              map.put("section", session.getSection());
              map.put("studentYear", session.getYear());
              map.put("date", session.getDate() != null ? session.getDate().toString() : "");
+             map.put("period", session.getPeriod());
              map.put("presentCount", presentCount);
              map.put("absentCount", absentCount);
              map.put("totalStudents", records.size());
              map.put("submittedBy", session.getSubmittedBy());
              map.put("status", session.getStatus().name());
+             map.put("studentRecords", studentData);
              response.add(map);
         }
         return ResponseEntity.ok(response);
